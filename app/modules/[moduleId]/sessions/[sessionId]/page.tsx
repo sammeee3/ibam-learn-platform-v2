@@ -659,13 +659,35 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
   <div className="py-8">
   {sessionData?.content?.written_curriculum?.main_content ? (
     <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
-      <div dangerouslySetInnerHTML={{
-  __html: sessionData.content.written_curriculum.main_content
-    .replace(/^# /gm, '<h1 style="font-size: 2.5rem; font-weight: bold; color: #2C3E50; margin: 2rem 0 1rem 0;">')
-    .replace(/^## /gm, '<h2 style="font-size: 2rem; font-weight: bold; color: #3498DB; margin: 1.5rem 0 1rem 0;">')
-    .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold; color: #2C3E50;">$1</strong>')
-    .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem;">')
-}} />
+      <div 
+  className="formatted-content"
+  dangerouslySetInnerHTML={{
+    __html: sessionData.content.written_curriculum.main_content
+      // Main headings (# ) - Large blue
+      .replace(/^# (.*$)/gm, '<h1 style="font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0; border-bottom: 3px solid #3498DB; padding-bottom: 0.5rem;">$1</h1>')
+      
+      // Sub headings (## ) - Medium dark  
+      .replace(/^## (.*$)/gm, '<h2 style="font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;">$1</h2>')
+      
+      // Sub-sub headings (### ) - Smaller but prominent
+      .replace(/^### (.*$)/gm, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;">$1</h3>')
+      
+      // Bold text
+      .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold; color: #2C3E50;">$1</strong>')
+      
+      // Bible verse hovers
+      .replace(/Genesis 1:1/g, '<span class="bible-verse" title="In the beginning God created the heavens and the earth." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 1:1</span>')
+      .replace(/Genesis 1:28/g, '<span class="bible-verse" title="God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 1:28</span>')
+      .replace(/Genesis 2:15/g, '<span class="bible-verse" title="The LORD God took the man and put him in the Garden of Eden to work it and take care of it." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 2:15</span>')
+      .replace(/Proverbs 13:22/g, '<span class="bible-verse" title="A good person leaves an inheritance for their children, but a sinner wealth is stored up for the righteous." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Proverbs 13:22</span>')
+      .replace(/Deuteronomy 8:18/g, '<span class="bible-verse" title="Remember the LORD your God, for it is he who gives you the ability to produce wealth." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Deuteronomy 8:18</span>')
+      .replace(/Colossians 3:23/g, '<span class="bible-verse" title="Whatever you do, work at it with all your heart, as working for the Lord, not for human masters." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Colossians 3:23</span>')
+      
+      // Paragraphs - BLACK text
+      .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;">')
+      .replace(/^(?!<[h|p|s])/gm, '<p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;">')
+  }}
+/>
     </div>
   ) : (
     <div className="text-center text-gray-500">
