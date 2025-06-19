@@ -656,10 +656,18 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
   </div>
 </div>                  </h4>
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
-                    <div className="text-center py-8 text-gray-500">
-                      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p>sessionData?.content?.written_curriculum?.main_content || "Content loading..."</p>
-                    </div>
+  <div className="py-8">
+  {sessionData?.content?.written_curriculum?.main_content ? (
+    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
+      {sessionData.content.written_curriculum.main_content}
+    </div>
+  ) : (
+    <div className="text-center text-gray-500">
+      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+      <p>Content loading...</p>
+    </div>
+  )}
+</div>
                   </div>
                 </div>
 
