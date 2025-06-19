@@ -647,7 +647,45 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
                     <div className="text-center py-8 text-gray-500">
                       <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p><div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/Genesis 1:1/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title=\"In the beginning God created the heavens and the earth.\">Genesis 1:1</span>").replace(/Genesis 1:28/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title='God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.'>Genesis 1:28</span>").replace(/Colossians 3:23/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title='Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.'>Colossians 3:23</span>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
+<style jsx>{`
+  .bible-verse {
+    position: relative;
+    color: #3498DB;
+    font-weight: bold;
+    border-bottom: 1px dotted #3498DB;
+    cursor: help;
+  }
+  .bible-verse:hover::after {
+    content: attr(data-verse);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2C3E50;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1.5;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1000;
+    white-space: normal;
+  }
+  .bible-verse:hover::before {
+    content: "";
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #2C3E50;
+    z-index: 1001;
+  }
+`}</style>
+                      <p><div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/Genesis 1:1 📖/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title=\"In the beginning God created the heavens and the earth.\">Genesis 1:1 📖</span>").replace(/Genesis 1:28/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title='God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.'>Genesis 1:28</span>").replace(/Colossians 3:23/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title='Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.'>Colossians 3:23</span>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
                     </div>
                   </div>
                 </div>
@@ -660,7 +698,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                       🎥 Business Teaching Video
                     </h4>
                     <div className="bg-white p-4 rounded-lg">
-                      <VimeoVideo url={sessionData.video_url} title="Business Teaching Video" />
+                      <VimeoVideo url={sessionData.video_url} data-verse="Business Teaching Video" />
                       
                       <div className="mt-6">
                         <h5 className="font-semibold text-gray-800 mb-3">
@@ -693,7 +731,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                         <h5 className="font-semibold text-purple-800 mb-3">🎥 Identity Transformation Video</h5>
                         <VimeoVideo 
                           url={sessionData.becoming_gods_entrepreneur.video_url} 
-                          title="Becoming God's Entrepreneur" 
+                          data-verse="Becoming God's Entrepreneur" 
                         />
                       </div>
                     )}
