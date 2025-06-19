@@ -643,18 +643,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   <h4 className="font-bold text-green-800 mb-3 flex items-center">
                     <Book className="w-5 h-5 mr-2" />
                     📝 Core Teaching Content (30-minute read)
-{/* TEMPORARY DEBUG - REMOVE AFTER FIXING */}
-<div className="bg-yellow-100 border border-yellow-400 p-4 rounded mb-4">
-  <h5 className="font-bold text-yellow-800">🐛 DEBUG INFO:</h5>
-  <div className="text-sm space-y-1">
-    <p><strong>sessionData exists:</strong> {sessionData ? 'YES' : 'NO'}</p>
-    <p><strong>content exists:</strong> {sessionData?.content ? 'YES' : 'NO'}</p>
-    <p><strong>written_curriculum exists:</strong> {sessionData?.content?.written_curriculum ? 'YES' : 'NO'}</p>
-    <p><strong>main_content exists:</strong> {sessionData?.content?.written_curriculum?.main_content ? 'YES' : 'NO'}</p>
-    <p><strong>main_content length:</strong> {sessionData?.content?.written_curriculum?.main_content?.length || 'undefined'}</p>
-    <p><strong>First 100 chars:</strong> {sessionData?.content?.written_curriculum?.main_content?.substring(0, 100) || 'none'}</p>
-  </div>
-</div>                  </h4>
+                 </h4>
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
   <div className="py-8">
   {sessionData?.content?.written_curriculum?.main_content ? (
