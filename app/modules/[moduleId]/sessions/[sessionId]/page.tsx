@@ -643,84 +643,13 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   <h4 className="font-bold text-green-800 mb-3 flex items-center">
                     <Book className="w-5 h-5 mr-2" />
                     📝 Core Teaching Content (30-minute read)
-                 </h4>
+                  </h4>
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
-  <div className="py-8">
-  {sessionData?.content?.written_curriculum?.main_content ? (
-    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
-      <div 
-  className="formatted-content"
-<style jsx>{`
-  .bible-verse {
-    position: relative;
-    color: #3498DB;
-    font-weight: bold;
-    cursor: help;
-    border-bottom: 1px dotted #3498DB;
-    transition: all 0.3s ease;
-  }
-  .bible-verse:hover { color: #2980B9; }
-  .bible-verse::after {
-    content: attr(data-verse);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2C3E50;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: normal;
-    width: 300px;
-    text-align: center;
-    line-height: 1.4;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  .bible-verse:hover::after {
-    opacity: 1;
-    visibility: visible;
-  }
-`}</style>
-  dangerouslySetInnerHTML={{
-    __html: sessionData.content.written_curriculum.main_content
-      // Main headings (# ) - Large blue
-      .replace(/^# (.*$)/gm, '<h1 style="font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0; border-bottom: 3px solid #3498DB; padding-bottom: 0.5rem;">$1</h1>')
-      
-      // Sub headings (## ) - Medium dark  
-      .replace(/^## (.*$)/gm, '<h2 style="font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;">$1</h2>')
-      
-      // Sub-sub headings (### ) - Smaller but prominent
-      .replace(/^### (.*$)/gm, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;">$1</h3>')
-      
-      // Bold text
-      .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold; color: #2C3E50;">$1</strong>')
-      
-      // Bible verse hovers
-      .replace(/Genesis 1:1/g, '<span class="bible-verse" data-verse="In the beginning God created the heavens and the earth.">Genesis 1:1</span>')
-      .replace(/Genesis 1:28/g, '<span class="bible-verse" data-verse="God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.">Genesis 1:28</span>')
-      .replace(/Genesis 2:15/g, '<span class="bible-verse" data-verse="The LORD God took the man and put him in the Garden of Eden to work it and take care of it.">Genesis 2:15</span>')
-      .replace(/Proverbs 13:22/g, '<span class="bible-verse" data-verse="A good person leaves an inheritance for their children, but a sinners wealth is stored up for the righteous.">Proverbs 13:22</span>')
-      .replace(/Deuteronomy 8:18/g, '<span class="bible-verse" data-verse="Remember the LORD your God, for it is he who gives you the ability to produce wealth.">Deuteronomy 8:18</span>')
-      .replace(/Colossians 3:23/g, '<span class="bible-verse" data-verse="Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.">Colossians 3:23</span>')
-      
-      // Paragraphs - BLACK text
-      .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;">')
-      .replace(/^(?!<[h|p|s])/gm, '<p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;">')
-  }}
-/>
-    </div>
-  ) : (
-    <div className="text-center text-gray-500">
-      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-      <p>Content loading...</p>
-    </div>
-  )}
-</div>
+                    <div className="text-center py-8 text-gray-500">
+                      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p>Written curriculum content will be populated here.</p>
+                      <p className="text-sm mt-2">This section will contain the comprehensive 30-minute teaching content.</p>
+                    </div>
                   </div>
                 </div>
 
