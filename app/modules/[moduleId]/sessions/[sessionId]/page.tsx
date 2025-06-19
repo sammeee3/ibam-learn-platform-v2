@@ -647,7 +647,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
                     <div className="text-center py-8 text-gray-500">
                       <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p>{sessionData?.content?.written_curriculum?.main_content || "Content loading..."}</p>
+                      <p><div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
                     </div>
                   </div>
                 </div>
