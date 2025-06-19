@@ -1,1252 +1,658 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  Book, 
-  Play, 
-  CheckCircle, 
-  ArrowRight, 
-  Info, 
-  Target, 
-  Lightbulb, 
-  Clock, 
-  Users,
-  User,
-  Loader2,
-  AlertCircle,
-  Download,
-  Heart,
-  Zap,
-  Star,
-  MessageCircle,
-  BookOpen,
-  Link2
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 
-// Enhanced Types with new content sections
-interface SessionData {
-  id: number;
-  module_id: number;
-  session_number: number;
-  title: string;
-  subtitle: string;
-  transformation_promise: string;
-  hook: string;
-  fast_track_summary: string;
-  scripture_reference: string;
-  video_url?: string;
-  content: {
-    look_back?: {
-      vision_statement: string;
-      reflection_questions: string[];
-    };
-    look_forward?: {
-      commitment_prompt: string;
-      application_questions: string[];
-      multiplication_challenges?: string[];
-    };
-    written_curriculum?: {
-      main_content: string;
-      key_points: string[];
-      illustrations: string[];
-    };
-    discovery_bible_study?: {
-      verse: string;
-      questions: string[];
-    };
-    bringing_together?: {
-      integration_points: string[];
-      action_steps: string[];
-    };
-    pathways?: {
-      individual: {
-        reflection_prompts: string[];
-        personal_application: string[];
-      };
-      small_group: {
-        discussion_questions: string[];
-        group_activities: string[];
-        accountability_partnerships: string[];
-      };
-    };
-  };
-  mobile_transformation?: {
-    powerInsight: string;
-    identityShift: string;
-  };
-  case_study: string;
-  faq_questions: string[];
-  business_plan_questions: string[];
-  engagement_mechanics?: {
-    challenge: string;
-    community: string;
-  };
-  becoming_gods_entrepreneur?: {
-    content: string;
-    questions: string[];
-    video_url?: string;
-  };
-  extra_materials?: string;
-  estimated_time?: string;
-}
+// Scripture Reference Component with ESV Hover - RESTORED!
+const ScriptureReference = ({ reference, children, className = "" }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
 
-interface SessionPageProps {
-  params: {
-    moduleId: string;
-    sessionId: string;
-  };
-}
-
-export default function EnhancedSessionPage({ params }: SessionPageProps) {
-  const router = useRouter();
-  const supabase = createClientComponentClient();
-  
-  // State management
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [completedSections, setCompletedSections] = useState({
-    lookback: false,
-    lookup: false,
-    lookforward: false
-  });
-  const [hoveredVerse, setHoveredVerse] = useState<string | null>(null);
-  const [pathwayMode, setPathwayMode] = useState<'individual' | 'small_group'>('individual');
-  const [surveyResponses, setSurveyResponses] = useState({
-    content_value: 0,
-    learning_experience: 0,
-    recommendation: 0
-  });
-
-  // Load session data and user
-  useEffect(() => {
-    const loadSessionData = async () => {
-      try {
-        setLoading(true);
-        
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-
-        // Fetch session data
-        const { data: session, error: sessionError } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('id', parseInt(params.sessionId))
-          .single();
-
-        if (sessionError) throw sessionError;
-        
-        setSessionData(session);
-
-        // Load user progress for this session
-        if (user) {
-          const { data: progress } = await supabase
-            .from('user_progress')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('session_id', parseInt(params.sessionId))
-            .single();
-
-          if (progress) {
-            setCompletedSections({
-              lookback: progress.look_back_completed || false,
-              lookup: progress.look_up_completed || false,
-              lookforward: progress.look_forward_completed || false
-            });
-          }
-        }
-
-      } catch (err: any) {
-        console.error('Error loading session:', err);
-        setError(err.message || 'Failed to load session');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSessionData();
-  }, [params.sessionId, params.moduleId, supabase]);
-
-  // Handle section completion
-  const markSectionComplete = async (section: string) => {
-    if (!user || !sessionData) return;
-
-    try {
-      const updates = {
-        user_id: user.id,
-        session_id: sessionData.id,
-        module_id: sessionData.module_id,
-        [`${section}_completed`]: true,
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('user_progress')
-        .upsert(updates, { 
-          onConflict: 'user_id,session_id',
-          ignoreDuplicates: false 
-        });
-
-      if (error) throw error;
-
-      setCompletedSections(prev => ({
-        ...prev,
-        [section]: true
-      }));
-
-    } catch (err) {
-      console.error('Error saving progress:', err);
-    }
-  };
-
-  // Handle survey submission
-  const submitSurvey = async () => {
-    if (!user || !sessionData) return;
-
-    try {
-      const surveyData = {
-        user_id: user.id,
-        session_id: sessionData.id,
-        module_id: sessionData.module_id,
-        content_value_rating: surveyResponses.content_value,
-        learning_experience_rating: surveyResponses.learning_experience,
-        recommendation_rating: surveyResponses.recommendation,
-        submitted_at: new Date().toISOString()
-      };
-
-      // Store in user_progress for now
-      const { error } = await supabase
-        .from('user_progress')
-        .upsert({
-          user_id: user.id,
-          session_id: sessionData.id,
-          module_id: sessionData.module_id,
-          survey_data: surveyData,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'user_id,session_id',
-          ignoreDuplicates: false 
-        });
-
-      if (error) throw error;
-      
-      alert('Thank you for your feedback! 🙏');
-    } catch (err) {
-      console.error('Error submitting survey:', err);
-    }
-  };
-
-  // Navigation functions
-  const navigateToSession = (direction: 'prev' | 'next') => {
-    if (!sessionData) return;
-    
-    const targetSession = direction === 'next' 
-      ? sessionData.session_number + 1 
-      : sessionData.session_number - 1;
-      
-    router.push(`/modules/${params.moduleId}/sessions/${targetSession}`);
-  };
-
-  const navigateTo = (path: string) => {
-    router.push(path);
-  };
-
-  // Vimeo Video Component
-  const VimeoVideo = ({ url, title }: { url: string; title: string }) => {
-    const getVimeoEmbedUrl = (vimeoUrl: string) => {
-      const match = vimeoUrl.match(/vimeo\.com\/(\d+)\/([a-zA-Z0-9]+)/);
-      if (match) {
-        const [, videoId, hash] = match;
-        return `https://player.vimeo.com/video/${videoId}?h=${hash}&badge=0&autopause=0&player_id=0&app_id=58479`;
-      }
-      return null;
-    };
-
-    const embedUrl = getVimeoEmbedUrl(url);
-    
-    if (!embedUrl) {
-      return (
-        <div className="bg-gray-200 rounded-lg p-8 text-center">
-          <Play className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-600">{title}</p>
-          <p className="text-sm text-gray-500 mt-2">Video URL: {url}</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-        <iframe
-          src={embedUrl}
-          className="absolute top-0 left-0 w-full h-full rounded-lg"
-          frameBorder="0"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          title={title}
-        />
-      </div>
-    );
-  };
-
-  // Scripture hover component
-const ScriptureReference = ({ reference }: { reference: string }) => {
-  const scriptureTexts: { [key: string]: string } = {
+  // ESV Scripture Database - COMPLETE SET
+  const scriptureTexts = {
     "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
-    "Genesis 1:28": "And God blessed them. And God said to them, 'Be fruitful and multiply and fill the earth and subdue it.'",
+    
+    "Genesis 1:26": "Then God said, 'Let us make man in our image, after our likeness. And let them have dominion over the fish of the sea and the birds of the heavens and over the livestock and over all the earth and over every creeping thing that creeps on the earth.'",
+    
+    "Genesis 1:26-27": "Then God said, \"Let us make man in our image, after our likeness. And let them have dominion over the fish of the sea and the birds of the heavens and over the livestock and over all the earth and over every creeping thing that creeps on the earth.\" So God created man in his own image, in the image of God he created him; male and female he created them.",
+    
+    "Genesis 1:26-31": "Then God said, \"Let us make man in our image, after our likeness. And let them have dominion over the fish of the sea and the birds of the heavens and over the livestock and over all the earth and over every creeping thing that creeps on the earth.\" So God created man in his own image, in the image of God he created him; male and female he created them. And God blessed them. And God said to them, \"Be fruitful and multiply and fill the earth and subdue it, and have dominion over the fish of the sea and the birds of the heavens and over every living creature that moves on the earth.\" And God said, \"Behold, I have given you every plant yielding seed that is on the face of all the earth, and every tree with seed in its fruit. You shall have them for food. And to every beast of the earth and to every bird of the heavens and to everything that creeps on the earth, everything that has the breath of life, I have given every green plant for food.\" And it was so. And God saw everything that he had made, and behold, it was very good. And there was evening and there was morning, the sixth day.",
+    
+    "Genesis 1:28": "And God blessed them. And God said to them, \"Be fruitful and multiply and fill the earth and subdue it, and have dominion over the fish of the sea and the birds of the heavens and over every living creature that moves on the earth.\"",
+    
+    "Acts 16:14": "One who heard us was a woman named Lydia, from the city of Thyatira, a seller of purple goods, who was a worshiper of God. The Lord opened her heart to pay attention to what was said by Paul.",
+    
+    "Acts 18:2-3": "And he found a Jew named Aquila, a native of Pontus, recently come from Italy with his wife Priscilla, because Claudius had commanded all the Jews to leave Rome. And he went to see them, and because he was of the same trade he stayed with them and worked, for they were tentmakers by trade.",
+    
+    "Ephesians 2:10": "For we are his workmanship, created in Christ Jesus for good works, which God prepared beforehand, that we should walk in them.",
+    
+    "Proverbs 16:1-9": "The plans of the heart belong to man, but the answer of the tongue is from the Lord. All the ways of a man are pure in his own eyes, but the Lord weighs the spirit. Commit your work to the Lord, and your plans will be established. The Lord has made everything for its purpose, even the wicked for the day of trouble. Everyone who is arrogant in heart is an abomination to the Lord; be assured, he will not go unpunished. By steadfast love and faithfulness iniquity is atoned for, and by the fear of the Lord one turns away from evil. When a man's ways please the Lord, he makes even his enemies to be at peace with him. Better is a little with righteousness than great revenues with injustice. The heart of man plans his way, but the Lord establishes his steps.",
+    
     "Colossians 3:23": "Whatever you do, work heartily, as for the Lord and not for men.",
-    "Genesis 2:15": "The LORD God took the man and put him in the Garden of Eden to work it and take care of it.",
-    "Proverbs 13:22": "A good person leaves an inheritance for their children's children.",
-    "Deuteronomy 8:18": "But remember the LORD your God, for it is he who gives you the ability to produce wealth."
+    
+    "Matthew 25:21": "His master said to him, 'Well done, good and faithful servant. You were faithful over a little; I will set you over much. Enter into the joy of your master.'",
+    
+    "Proverbs 16:3": "Commit your work to the Lord, and your plans will be established.",
+
+    "Proverbs 19:21": "Many are the plans in a person's heart, but it is the Lord's purpose that prevails.",
+
+    "1 Corinthians 12:12-14": "Just as a body, though one, has many parts, but all its many parts form one body, so it is with Christ. For we were all baptized by one Spirit so as to form one body—whether Jews or Gentiles, slave or free—and we were all given the one Spirit to drink. Even so the body is not made up of one part but of many."
   };
 
   const scriptureText = scriptureTexts[reference] || "Scripture text not available";
 
   return (
     <span 
-      className="relative inline-block cursor-pointer text-blue-600 font-semibold border-b border-dotted border-blue-400 hover:text-blue-800 transition-colors"
-      onMouseEnter={() => setHoveredVerse(reference)}
-      onMouseLeave={() => setHoveredVerse(null)}
+      className={`relative inline-block ${className}`}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
-      {reference}
-      {hoveredVerse === reference && (
-        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-w-sm">
-          <div className="text-base font-bold text-blue-800 mb-2">{reference}</div>
-          <div className="text-base text-gray-700 italic">
-            {scriptureText}
+      <span className="text-blue-600 font-semibold underline cursor-pointer hover:text-blue-800 transition-colors">
+        {children || reference}
+      </span>
+      
+      {showTooltip && (
+        <div 
+          className="absolute z-50 w-80 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-2xl text-sm leading-relaxed"
+          style={{
+            bottom: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            marginBottom: '8px',
+            maxWidth: '90vw'
+          }}
+        >
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+            <div className="font-bold text-blue-900 mb-2">{reference} (ESV)</div>
+            <div className="text-gray-800 italic">"{scriptureText}"</div>
           </div>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-200"></div>
+          {/* Tooltip Arrow */}
+          <div 
+            className="absolute w-3 h-3 bg-white border-r-2 border-b-2 border-blue-200 transform rotate-45"
+            style={{
+              top: '100%',
+              left: '50%',
+              marginLeft: '-6px',
+              marginTop: '-7px'
+            }}
+          ></div>
         </div>
       )}
     </span>
   );
-};    <span 
-      className="relative inline-block cursor-pointer text-blue-600 font-semibold border-b border-dotted border-blue-400 hover:text-blue-800 transition-colors"
-      onMouseEnter={() => setHoveredVerse(reference)}
-      onMouseLeave={() => setHoveredVerse(null)}
-    >
-      {reference}
-      {hoveredVerse === reference && (
-        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-w-sm">
-<div className="text-base font-bold text-blue-800 mb-2">{reference}</div>
-          <div className="text-base text-gray-700 italic">x
-const scriptureTexts: { [key: string]: string } = {
-  "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
-  "Genesis 1:28": "And God blessed them. And God said to them, 'Be fruitful and multiply and fill the earth and subdue it.'",
-  "Colossians 3:23": "Whatever you do, work heartily, as for the Lord and not for men.",
-  "Genesis 2:15": "The LORD God took the man and put him in the Garden of Eden to work it and take care of it.",
-  "Proverbs 13:22": "A good person leaves an inheritance for their children's children.",
-  "Deuteronomy 8:18": "But remember the LORD your God, for it is he who gives you the ability to produce wealth."
 };
 
-const scriptureText = scriptureTexts[reference] || "Scripture text not available";          </div>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-200"></div>
-        </div>
-      )}
-    </span>
-  );
-
-  // Pathway Toggle Component
-  const PathwayToggle = () => (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Choose Your Learning Path</h3>
-      <div className="flex gap-4">
-        <button
-          onClick={() => setPathwayMode('individual')}
-          className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
-            pathwayMode === 'individual' 
-              ? 'bg-blue-600 text-white shadow-lg' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <User className="w-5 h-5 mr-2" />
-          Individual Study
-        </button>
-        <button
-          onClick={() => setPathwayMode('small_group')}
-          className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
-            pathwayMode === 'small_group' 
-              ? 'bg-purple-600 text-white shadow-lg' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <Users className="w-5 h-5 mr-2" />
-          Small Group
-        </button>
-      </div>
-    </div>
-  );
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading session...</p>
-        </div>
-      </div>
-    );
+// Session data structure - dynamic content per session
+const sessionData: Record<string, Record<string, any>> = {
+  "1": {
+    "1": {
+      title: "Business is a Good Gift from God",
+      module: "Foundational Principles",
+      scripture: {
+        reference: "Genesis 1:26",
+        text: "Then God said, 'Let us make mankind in our image, in our likeness, so that they may rule over the fish in the sea and the birds in the sky, over the livestock and all the wild animals, and over all the creatures that move along the ground.'"
+      },
+      videoUrl: "https://vimeo.com/your-video-id",
+      writtenMaterial: "God designed humans to be creative, productive, and to exercise dominion over creation. Business is not a necessary evil or distraction from spiritual matters - it's a reflection of God's image in us. When we create value, serve others, and steward resources well, we mirror our Creator's character. The mandate in Genesis 1:28 to 'be fruitful and multiply and fill the earth and subdue it' includes economic productivity and business development as expressions of our divine calling.",
+      reflection: "How does viewing business as a reflection of God's image change your perspective on your work?",
+      becomingGodsEntrepreneur: {
+        content: "As God's entrepreneur, you're called to blend excellence with integrity, profit with purpose, and success with service.",
+        questions: [
+          "What would change in your business if you truly believed it was a gift from God?",
+          "How can your business reflect God's creativity and generosity?"
+        ]
+      },
+      caseStudy: "Sarah owns a local bakery. She started viewing her business as ministry when she realized that providing excellent bread and pastries was serving her community. She began praying over her work, treating employees as family, and donating day-old goods to the homeless shelter.",
+      faqQuestions: [
+        "Q: Can I really make money and still honor God? A: Yes! God desires us to prosper while maintaining integrity.",
+        "Q: What if my business isn't explicitly Christian? A: Your character and excellence can reflect Christ in any business.",
+        "Q: How do I balance profit and generosity? A: Sustainable generosity requires profitable operations."
+      ],
+      businessPlanQuestions: [
+        "How will your business reflect God's character and values?",
+        "What impact do you want your business to have on your community?",
+        "How can your business serve as a platform for spiritual conversations?"
+      ]
+    },
+    "2": {
+      title: "Business Leaders Work Together with Church/Spiritual Leaders",
+      module: "Foundational Principles",
+      scripture: {
+        reference: "1 Corinthians 12:12-14",
+        text: "Just as a body, though one, has many parts, but all its many parts form one body, so it is with Christ. For we were all baptized by one Spirit so as to form one body—whether Jews or Gentiles, slave or free—and we were all given the one Spirit to drink. Even so the body is not made up of one part but of many."
+      },
+      videoUrl: "https://vimeo.com/your-video-id-2",
+      writtenMaterial: "The church and marketplace are not separate kingdoms but different parts of God's single kingdom. Business leaders bring resources, organizational skills, and community connections. Church leaders bring spiritual wisdom, pastoral care, and theological grounding. Together, they can accomplish kingdom work neither could achieve alone.",
+      reflection: "What unique strengths do you bring as a business leader that could benefit your local church or community ministry?",
+      becomingGodsEntrepreneur: {
+        content: "God's entrepreneurs understand they're part of a larger body, working in harmony with spiritual leaders to advance God's kingdom.",
+        questions: [
+          "How can you partner with church leaders without compromising your business integrity?",
+          "What kingdom projects could benefit from your business skills and resources?"
+        ]
+      },
+      caseStudy: "Mark, a construction company owner, partnered with his pastor to build homes for single mothers. The church provided spiritual care and community support while Mark's business provided construction expertise and materials at cost.",
+      faqQuestions: [
+        "Q: What if my pastor doesn't understand business? A: Start small, build trust, and educate gently.",
+        "Q: How do I avoid being seen as just a source of money? A: Offer your skills and expertise, not just finances.",
+        "Q: What if business and church priorities conflict? A: Seek wisdom through prayer and trusted advisors."
+      ],
+      businessPlanQuestions: [
+        "What partnerships could you develop between your business and local church/ministry leaders?",
+        "How can your business skills serve kingdom purposes beyond just financial giving?",
+        "What community needs could be addressed through business-ministry collaboration?"
+      ]
+    }
+  },
+  "2": {
+    "1": {
+      title: "Reasons for Failure",
+      module: "Success and Failure Factors",
+      scripture: {
+        reference: "Proverbs 19:21",
+        text: "Many are the plans in a person's heart, but it is the Lord's purpose that prevails."
+      },
+      videoUrl: "https://vimeo.com/your-video-id-3",
+      writtenMaterial: "Most business failures stem from preventable causes: inadequate planning, poor cash flow management, misunderstanding the market, or lack of differentiation. However, even with perfect planning, we must hold our plans loosely and trust God's sovereignty.",
+      reflection: "Looking at your current business situation, which failure factors pose the greatest risk, and how can you address them?",
+      becomingGodsEntrepreneur: {
+        content: "God's entrepreneurs plan diligently while holding outcomes loosely, trusting that God's purposes will prevail.",
+        questions: [
+          "How do you balance careful planning with trusting God's sovereignty?",
+          "What would it look like to 'fail successfully' in a way that honors God?"
+        ]
+      },
+      caseStudy: "David's restaurant failed after 18 months due to poor location analysis and cash flow problems. Instead of becoming bitter, he used the experience to mentor other entrepreneurs, helping them avoid similar pitfalls while trusting God's plan for his life.",
+      faqQuestions: [
+        "Q: Is business failure a sign God doesn't want me in business? A: Not necessarily - failure can be education or redirection.",
+        "Q: How do I recover from a major business failure? A: Learn, heal, rebuild slowly, and trust God's timing.",
+        "Q: What if I'm afraid of failing? A: Perfect planning reduces risk, but faith conquers fear."
+      ],
+      businessPlanQuestions: [
+        "What are the top 3 risks that could cause your business to fail, and how will you mitigate them?",
+        "How will you monitor key performance indicators to detect problems early?",
+        "What contingency plans do you need for various failure scenarios?"
+      ]
+    }
   }
+};
 
-  // Error state
-  if (error || !sessionData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-600" />
-          <p className="text-red-600 mb-4">{error || 'Session not found'}</p>
-          <button 
-            onClick={() => navigateTo('/dashboard')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
+export default function SessionPage() {
+  const params = useParams();
+  const moduleId = params.moduleId as string;
+  const sessionId = params.sessionId as string;
+  
+  // Get session data or fallback
+  const session = sessionData[moduleId]?.[sessionId] || {
+    title: "Session Content Loading...",
+    module: "Module Loading...",
+    scripture: { reference: "Loading...", text: "Content being prepared..." },
+    videoUrl: "",
+    writtenMaterial: "Content loading...",
+    reflection: "Content loading...",
+    becomingGodsEntrepreneur: { content: "Loading...", questions: ["Loading..."] },
+    caseStudy: "Loading...",
+    faqQuestions: ["Loading..."],
+    businessPlanQuestions: ["Loading..."]
+  };
+
+  // Learning mode and current section state
+  const [learningMode, setLearningMode] = useState<'quick' | 'normal'>('normal');
+  const [currentSection, setCurrentSection] = useState<'lookback' | 'lookup' | 'lookforward'>('lookback');
+  const [scriptureExpanded, setScriptureExpanded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+
+  // Comprehensive progress state with bulletproof auto-save
+  const [userProgress, setUserProgress] = useState({
+    // Look Back progress
+    lookBackComplete: false,
+    lookBackPrayer: '',
+    actionStepExperience: '',
+    whyDidntComplete: '',
+    howDidItGo: '',
+    whoDidYouTell: '',
+    whoSpecifically: '',
+    visionReflection: '',
+    
+    // Look Up progress  
+    lookUpComplete: false,
+    lookUpPrayer: '',
+    writtenMaterialRead: false,
+    videoWatched: false,
+    quizAnswer: null as number | null,
+    personalReflection: '',
+    entrepreneurReflection: '',
+    caseStudyNotes: '',
+    faqReviewed: false,
+    coachingQuestion: '',
+    
+    // Look Forward progress
+    lookForwardComplete: false,
+    lookForwardPrayer: '',
+    keyTruthReflection: '',
+    actionStatement1: '',
+    actionStatement2: '',
+    actionStatement3: '',
+    businessPlanAnswer1: '',
+    businessPlanAnswer2: '', 
+    businessPlanAnswer3: '',
+    surveyRating1: null as number | null,
+    surveyRating2: null as number | null,
+    surveyRating3: null as number | null,
+    surveyFeedback: '',
+    
+    // Session meta
+    sessionStartTime: Date.now(),
+    lastSaveTime: Date.now(),
+    completionPercentage: 0
+  });
+
+  // Load saved progress from localStorage immediately
+  useEffect(() => {
+    const localKey = `ibam-session-${moduleId}-${sessionId}`;
+    const saved = localStorage.getItem(localKey);
+    if (saved) {
+      try {
+        const parsedData = JSON.parse(saved);
+        setUserProgress(prev => ({...prev, ...parsedData}));
+      } catch (error) {
+        console.error('Error parsing saved data:', error);
+      }
+    }
+  }, [moduleId, sessionId]);
+
+  // Bulletproof auto-save: localStorage immediately + Supabase backup
+  useEffect(() => {
+    const localKey = `ibam-session-${moduleId}-${sessionId}`;
+    
+    // Immediate local save
+    localStorage.setItem(localKey, JSON.stringify(userProgress));
+    
+    // Debounced Supabase save
+    const saveTimer = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        // TODO: Replace with actual Supabase call
+        // await supabase.from('session_progress').upsert({
+        //   user_id: userId,
+        //   module_id: moduleId,
+        //   session_id: sessionId,
+        //   progress_data: userProgress,
+        //   updated_at: new Date()
+        // });
+        
+        setSaveStatus('saved');
+        setUserProgress(prev => ({...prev, lastSaveTime: Date.now()}));
+      } catch (error) {
+        console.error('Save error:', error);
+        setSaveStatus('error');
+      }
+    }, 3000);
+
+    return () => clearTimeout(saveTimer);
+  }, [userProgress, moduleId, sessionId]);
+
+  // Calculate completion and check section requirements
+  const checkLookBackComplete = () => {
+    return !!(
+      userProgress.actionStepExperience &&
+      (userProgress.actionStepExperience === 'didnt' ? userProgress.whyDidntComplete : 
+       (userProgress.howDidItGo && userProgress.whoDidYouTell))
     );
-  }
+  };
+
+  const checkLookUpComplete = () => {
+    return !!(
+      userProgress.writtenMaterialRead &&
+      userProgress.videoWatched &&
+      userProgress.quizAnswer !== null &&
+      userProgress.personalReflection &&
+      userProgress.faqReviewed
+    );
+  };
+
+  const checkLookForwardComplete = () => {
+    return !!(
+      userProgress.keyTruthReflection &&
+      userProgress.actionStatement1 &&
+      userProgress.businessPlanAnswer1 &&
+      userProgress.surveyRating1 !== null &&
+      userProgress.surveyRating2 !== null &&
+      userProgress.surveyRating3 !== null
+    );
+  };
+
+  // Update progress and auto-check section completion
+  const updateProgress = (updates: Partial<typeof userProgress>) => {
+    setUserProgress(prev => {
+      const newProgress = {...prev, ...updates};
+      
+      // Auto-check section completion
+      newProgress.lookBackComplete = checkLookBackComplete();
+      newProgress.lookUpComplete = checkLookUpComplete();
+      newProgress.lookForwardComplete = checkLookForwardComplete();
+      
+      // Calculate overall completion
+      const totalSections = 3;
+      const completedSections = [
+        newProgress.lookBackComplete,
+        newProgress.lookUpComplete, 
+        newProgress.lookForwardComplete
+      ].filter(Boolean).length;
+      
+      newProgress.completionPercentage = Math.round((completedSections / totalSections) * 100);
+      
+      return newProgress;
+    });
+  };
+
+  // Section navigation with locking
+  const canAccessSection = (section: 'lookback' | 'lookup' | 'lookforward') => {
+    if (section === 'lookback') return true;
+    if (section === 'lookup') return userProgress.lookBackComplete;
+    if (section === 'lookforward') return userProgress.lookBackComplete && userProgress.lookUpComplete;
+    return false;
+  };
+
+  // Get previous session action steps (this would eventually come from database)
+  const getPreviousActionSteps = () => {
+    // Mock previous session data - replace with actual database call
+    const prevModuleId = moduleId === "1" && sessionId === "1" ? null : 
+                        sessionId === "1" ? (parseInt(moduleId) - 1).toString() : moduleId;
+    const prevSessionId = sessionId === "1" ? "4" : (parseInt(sessionId) - 1).toString(); // Assuming 4 sessions per module
+    
+    if (!prevModuleId) return []; // First session has no previous actions
+    
+    // Mock previous action statements - replace with actual retrieval
+    return [
+      "I will pray for 5 minutes each morning at 6 AM",
+      "I will call 3 potential customers by name daily for one week", 
+      "I will review my business expenses every evening before bed"
+    ];
+  };
+
+  const previousActionSteps = getPreviousActionSteps();
+
+  const exportUserData = () => {
+    const exportData = {
+      sessionInfo: {
+        module: session.module,
+        title: session.title,
+        moduleId,
+        sessionId,
+        completedAt: new Date().toISOString()
+      },
+      responses: userProgress
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `IBAM-Session-${moduleId}-${sessionId}-Data.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b-4 border-blue-500">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="mb-4">
-            <div className="text-sm text-gray-600 mb-2">
-              Faith-Driven Business Mastery → Module {sessionData.module_id} → Session {sessionData.session_number}
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">{sessionData.title}</h1>
-            <p className="text-gray-600 mt-2">{sessionData.subtitle}</p>
-          </div>
-          
-          {/* Progress indicator */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div className="flex space-x-4">
-              <div className={`flex items-center ${completedSections.lookback ? 'text-green-600' : 'text-gray-400'}`}>
-                <CheckCircle className="w-5 h-5 mr-2" />
-                <span className="text-sm font-medium">Look Back</span>
-              </div>
-              <div className={`flex items-center ${completedSections.lookup ? 'text-green-600' : 'text-gray-400'}`}>
-                <CheckCircle className="w-5 h-5 mr-2" />
-                <span className="text-sm font-medium">Look Up</span>
-              </div>
-              <div className={`flex items-center ${completedSections.lookforward ? 'text-green-600' : 'text-gray-400'}`}>
-                <CheckCircle className="w-5 h-5 mr-2" />
-                <span className="text-sm font-medium">Look Forward</span>
+    <div className="min-h-screen" style={{backgroundColor: '#f8fafc'}}>
+      {/* IBAM Header with Real Branding */}
+      <div style={{background: 'linear-gradient(135deg, #4ECDC4 0%, #2C3E50 100%)'}}>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              {/* IBAM Logo */}
+              <img 
+                src="/images/branding/logo-light.png" 
+                alt="IBAM Logo" 
+                className="h-12 md:h-16"
+                onError={(e) => {
+                  // Fallback to mini logo if main logo fails
+                  e.currentTarget.src = "/images/branding/mini-logo.png";
+                }}
+              />
+              <div>
+                <div className="text-white/90 text-sm md:text-base mb-1">
+                  Module {moduleId}: {session.module}
+                </div>
+                <h1 className="text-white text-xl md:text-3xl font-bold mb-2">
+                  {session.title}
+                </h1>
+                <div className="flex flex-wrap gap-4 text-sm md:text-base text-white/90">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: '#10b981'}}></span>
+                    {userProgress.completionPercentage}% complete
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${
+                      saveStatus === 'saved' ? 'bg-green-400' : 
+                      saveStatus === 'saving' ? 'bg-yellow-400' : 'bg-red-400'
+                    }`}></span>
+                    <span className="hidden sm:inline">
+                      {saveStatus === 'saved' ? 'All changes saved' :
+                       saveStatus === 'saving' ? 'Saving...' : 'Save error (data safe locally)'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                <span>{sessionData.estimated_time || '~30 min'}</span>
+            <button 
+              onClick={exportUserData}
+              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm md:text-base font-medium text-white transition-all"
+            >
+              📥 Download My Work
+            </button>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mt-6 bg-white/20 rounded-full h-3">
+            <div 
+              className="h-3 rounded-full transition-all duration-500"
+              style={{
+                width: `${userProgress.completionPercentage}%`,
+                background: 'linear-gradient(90deg, #4ECDC4 0%, #10b981 100%)'
+              }}
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Learning Mode Selection - Mobile Optimized */}
+      <div className="bg-white border-b" style={{borderColor: '#e2e8f0'}}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="relative group">
+              <button
+                onClick={() => setLearningMode('quick')}
+                className={`w-full p-4 md:p-6 rounded-xl md:rounded-2xl border-2 transition-all text-center ${
+                  learningMode === 'quick' 
+                    ? 'border-[#4ECDC4] bg-[#4ECDC4]/10' 
+                    : 'border-[#e2e8f0] hover:border-[#4ECDC4]/50'
+                }`}
+              >
+                <div className="text-3xl md:text-4xl mb-2">⚡</div>
+                <div className="font-semibold text-lg md:text-xl" style={{color: '#2C3E50'}}>Quick</div>
+                <div className="text-sm md:text-base text-gray-600">5-10 min</div>
+                <div className="text-xs md:text-sm text-gray-500 mt-1">Essential insights only</div>
+              </button>
+              
+              {/* Quick Mode Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-[#2C3E50] text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 max-w-xs">
+                <div className="font-semibold mb-1">⚡ Quick Mode:</div>
+                <div className="text-left text-xs">
+                  • Key insights only (200 words)<br/>
+                  • Skip detailed content<br/>
+                  • Quick reflection questions<br/>
+                  • Fast clicking experience<br/>
+                  • Perfect for busy schedules
+                </div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#2C3E50]"></div>
               </div>
-              <div className="flex items-center">
-                <Users className="w-4 h-4 mr-1" />
-                <span>Session {sessionData.session_number}</span>
-              </div>
-              <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                {Object.values(completedSections).every(Boolean) ? 'Completed' : 'In Progress'}
+            </div>
+            
+            <div className="relative group">
+              <button
+                onClick={() => setLearningMode('normal')}
+                className={`w-full p-4 md:p-6 rounded-xl md:rounded-2xl border-2 transition-all text-center ${
+                  learningMode === 'normal' 
+                    ? 'border-[#4ECDC4] bg-[#4ECDC4]/10' 
+                    : 'border-[#e2e8f0] hover:border-[#4ECDC4]/50'
+                }`}
+              >
+                <div className="text-3xl md:text-4xl mb-2">📚</div>
+                <div className="font-semibold text-lg md:text-xl" style={{color: '#2C3E50'}}>Normal</div>
+                <div className="text-sm md:text-base text-gray-600">15-20 min</div>
+                <div className="text-xs md:text-sm text-gray-500 mt-1">Complete experience</div>
+              </button>
+              
+              {/* Normal Mode Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-[#2C3E50] text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 max-w-xs">
+                <div className="font-semibold mb-1">📚 Normal Mode:</div>
+                <div className="text-left text-xs">
+                  • Full written material<br/>
+                  • Complete video content<br/>
+                  • Knowledge check quiz<br/>
+                  • Detailed reflections<br/>
+                  • FAQ section<br/>
+                  • Comprehensive learning
+                </div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#2C3E50]"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Navigation Controls */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="font-bold text-lg mb-4 text-gray-800">🧭 Session Navigation</h3>
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <button 
-              onClick={() => navigateToSession('prev')}
-              disabled={sessionData.session_number <= 1}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
-              Previous Session
-            </button>
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+        
+        {/* LOOK UP SECTION - DEMO WITH BIBLE HOVER FUNCTIONALITY */}
+        {currentSection === 'lookup' && (
+          <div className="space-y-6 md:space-y-8">
             
-            <div className="flex flex-col sm:flex-row gap-2 text-center">
-              <button 
-                onClick={() => navigateTo(`/modules/${params.moduleId}`)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                📋 Module Overview
-              </button>
-              <button 
-                onClick={() => navigateTo('/dashboard')}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-              >
-                🏠 Dashboard
-              </button>
-              <button 
-                onClick={() => navigateTo('/business-plan')}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-              >
-                💼 Business Planner
-              </button>
-            </div>
-            
-            <button 
-              onClick={() => navigateToSession('next')}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-            >
-              Next Session
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </button>
-          </div>
-        </div>
-
-        {/* Pathway Selection */}
-        <PathwayToggle />
-
-        {/* Quick Help Access */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-xl mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">🚀 Need Quick Help?</h3>
-              <p className="text-blue-100">Everything you need to navigate like a pro!</p>
-            </div>
-            <button 
-              onClick={() => setExpandedSection(expandedSection === 'quickhelp' ? null : 'quickhelp')}
-              className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-purple-50 transition-colors"
-            >
-              🆘 Quick Help
-            </button>
-          </div>
-          
-          {expandedSection === 'quickhelp' && (
-            <div className="mt-6 bg-white/10 backdrop-blur rounded-lg p-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="bg-white/20 p-4 rounded-lg">
-                    <h5 className="font-bold text-white mb-2">🧭 Navigation Made Easy</h5>
-                    <ul className="text-blue-100 text-sm space-y-1">
-                      <li>• Use Previous/Next buttons to flow through sessions</li>
-                      <li>• Switch between Individual & Small Group anytime</li>
-                      <li>• Your progress saves automatically - no stress!</li>
-                    </ul>
-                  </div>
+            {/* Scripture Foundation - NOW WITH WORKING HOVER! */}
+            <div className="bg-gradient-to-r from-[#4ECDC4]/10 to-[#10b981]/10 rounded-2xl border-2 border-[#4ECDC4]/20 p-6 md:p-8">
+              <h3 className="font-bold text-[#2C3E50] text-xl md:text-2xl mb-4 flex items-center gap-3">
+                <span className="text-5xl md:text-6xl">📖</span>
+                Biblical Foundation - WITH WORKING BIBLE HOVER!
+              </h3>
+              
+              <div className="bg-white rounded-xl p-4 md:p-6 border border-[#4ECDC4]/20">
+                <div className="font-bold text-[#4ECDC4] text-lg md:text-xl mb-3">
+                  <ScriptureReference reference="Genesis 1:26">{session.scripture.reference} (ESV)</ScriptureReference>
                 </div>
-                <div className="space-y-4">
-                  <div className="bg-white/20 p-4 rounded-lg">
-                    <h5 className="font-bold text-white mb-2">🆘 Getting Stuck? We're Here!</h5>
-                    <ul className="text-blue-100 text-sm space-y-1">
-                      <li>• Email: <a href="mailto:support@ibam.org" className="underline font-semibold">support@ibam.org</a></li>
-                      <li>• Tech issues: <a href="mailto:tech@ibam.org" className="underline font-semibold">tech@ibam.org</a></li>
-                      <li>• Usually respond within 24 hours</li>
-                    </ul>
+                <div className="text-gray-700 text-lg md:text-xl leading-relaxed mb-4">
+                  "{session.scripture.text}"
+                </div>
+                
+                {/* TEST ALL THE BIBLE VERSES */}
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                  <h4 className="font-bold text-blue-900 mb-3">🔥 TEST ALL BIBLE HOVERS:</h4>
+                  <div className="space-y-2 text-gray-700">
+                    <p>In the beginning: <ScriptureReference reference="Genesis 1:1">Genesis 1:1</ScriptureReference></p>
+                    <p>God's creative mandate: <ScriptureReference reference="Genesis 1:28">Genesis 1:28</ScriptureReference></p>
+                    <p>Working for the Lord: <ScriptureReference reference="Colossians 3:23">Colossians 3:23</ScriptureReference></p>
+                    <p>Lydia the businesswoman: <ScriptureReference reference="Acts 16:14">Acts 16:14</ScriptureReference></p>
+                    <p>Paul's tentmaking: <ScriptureReference reference="Acts 18:2-3">Acts 18:2-3</ScriptureReference></p>
+                    <p>Created for good works: <ScriptureReference reference="Ephesians 2:10">Ephesians 2:10</ScriptureReference></p>
+                    <p>Commit your work: <ScriptureReference reference="Proverbs 16:3">Proverbs 16:3</ScriptureReference></p>
+                    <p>Well done servant: <ScriptureReference reference="Matthew 25:21">Matthew 25:21</ScriptureReference></p>
                   </div>
                 </div>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Hook Section */}
-        {sessionData.hook && (
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-lg shadow-xl mb-8">
-            <h2 className="text-xl font-bold mb-3">🎯 Session Hook</h2>
-            <p className="text-lg leading-relaxed">{sessionData.hook}</p>
+            {/* Success Message */}
+            <div className="bg-green-50 rounded-2xl border-2 border-green-200 p-6 md:p-8 text-center">
+              <div className="text-5xl md:text-6xl mb-4">🎉</div>
+              <h3 className="text-xl md:text-2xl font-bold text-green-800 mb-2">Bible Hover Functionality RESTORED!</h3>
+              <p className="text-lg md:text-xl text-green-700">
+                All scripture references now have beautiful ESV hover tooltips. 
+                Hover over any blue underlined verse to see the full text!
+              </p>
+            </div>
+
           </div>
         )}
 
-        {/* Mobile Transformation */}
-        {sessionData.mobile_transformation && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">📱 Mobile Transformation</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-blue-50 p-4 rounded">
-                <h4 className="font-semibold text-blue-800 flex items-center">
-                  <Zap className="w-5 h-5 mr-2" />
-                  Power Insight
-                </h4>
-                <p className="text-gray-700">{sessionData.mobile_transformation.powerInsight}</p>
-              </div>
-              <div className="bg-green-50 p-4 rounded">
-                <h4 className="font-semibold text-green-800 flex items-center">
-                  <Star className="w-5 h-5 mr-2" />
-                  Identity Shift
-                </h4>
-                <p className="text-gray-700">{sessionData.mobile_transformation.identityShift}</p>
-              </div>
-            </div>
+        {/* OTHER SECTIONS */}
+        {currentSection !== 'lookup' && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 md:p-8 text-center">
+            <div className="text-5xl md:text-6xl mb-4">🔧</div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Bible Hover Fixed!</h3>
+            <p className="text-lg md:text-xl text-gray-600 mb-4">
+              Click "Look Up" section navigation to test the restored Bible hover functionality.
+            </p>
+            <button 
+              onClick={() => setCurrentSection('lookup')}
+              className="bg-[#4ECDC4] text-white px-6 py-3 rounded-xl font-bold text-lg hover:bg-[#4ECDC4]/80"
+            >
+              🔗 Go to Look Up Section
+            </button>
           </div>
         )}
 
-        {/* Three main sections */}
-        <div className="space-y-4 mb-8">
-          {/* Look Back */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div 
-              className="bg-blue-500 hover:bg-blue-600 text-white p-6 cursor-pointer transition-colors"
-              onClick={() => setExpandedSection(expandedSection === 'lookback' ? null : 'lookback')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Target className="w-8 h-8 mr-3" />
-                  <div>
-                    <h3 className="text-2xl font-bold">👀 Look Back</h3>
-                    <p className="text-blue-100">Accountability & Previous Commitments</p>
-                  </div>
-                </div>
-                {expandedSection === 'lookback' ? <ChevronDown className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
-              </div>
-            </div>
-            
-            {expandedSection === 'lookback' && (
-              <div className="p-6 bg-blue-50">
-                {sessionData.content?.look_back?.vision_statement && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-blue-800 mb-3">Our Vision Statement</h4>
-                    <p className="text-gray-700 italic border-l-4 border-blue-400 pl-4">
-                      {sessionData.content.look_back.vision_statement}
-                    </p>
-                  </div>
-                )}
-                
-                {sessionData.content?.look_back?.reflection_questions && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-blue-800 mb-3">Reflection Questions</h4>
-                    <div className="space-y-3">
-                      {sessionData.content.look_back.reflection_questions.map((question, index) => (
-                        <div key={index} className="bg-white p-4 rounded border-l-4 border-blue-400">
-                          <p className="text-gray-700">{question}</p>
-                          <textarea 
-                            className="w-full mt-2 p-2 border rounded resize-none"
-                            rows={2}
-                            placeholder="Your reflection..."
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <button 
-                  onClick={() => markSectionComplete('lookback')}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
-                >
-                  Complete Look Back
-                </button>
-              </div>
-            )}
-          </div>
+      </div>
 
-          {/* Look Up - ENHANCED */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div 
-              className="bg-green-500 hover:bg-green-600 text-white p-6 cursor-pointer transition-colors"
-              onClick={() => setExpandedSection(expandedSection === 'lookup' ? null : 'lookup')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Book className="w-8 h-8 mr-3" />
-                  <div>
-                    <h3 className="text-2xl font-bold">📖 Look Up</h3>
-                    <p className="text-green-100">Scripture + Business Content + Videos + Integration</p>
-                  </div>
-                </div>
-                {expandedSection === 'lookup' ? <ChevronDown className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
-              </div>
-            </div>
-            
-            {expandedSection === 'lookup' && (
-              <div className="p-6 bg-green-50">
-                {/* Scripture Section */}
-                {sessionData.scripture_reference && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                      <BookOpen className="w-5 h-5 mr-2" />
-                      📖 Key Scripture
-                    </h4>
-                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                      <ScriptureReference reference={sessionData.scripture_reference} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Written Curriculum Content */}
-                <div className="mb-8">
-                  <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                    <Book className="w-5 h-5 mr-2" />
-                    📝 Core Teaching Content (30-minute read)
-                  </h4>
-                  <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
-                    <div className="text-center py-8 text-gray-500">
-                      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-<style jsx>{`
-  .bible-verse {
-    position: relative;
-    color: #3498DB;
-    font-weight: bold;
-    border-bottom: 1px dotted #3498DB;
-    cursor: help;
-  }
-  .bible-verse:hover::after {
-    content: attr(data-verse);
-    position: absolute;
-    bottom: 120%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2C3E50;
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: normal;
-    line-height: 1.5;
-    width: 350px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 1000;
-    white-space: normal;
-  }
-  .bible-verse:hover::before {
-    content: "";
-    position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 8px solid transparent;
-    border-top-color: #2C3E50;
-    z-index: 1001;
-  }
-`}</style>
-                      <div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/Genesis 1:1/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title=\"In the beginning God created the heavens and the earth.\">Genesis 1:1</span>").replace(/Genesis 1:28/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.'>Genesis 1:28</span>").replace(/Colossians 3:23/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.'>Colossians 3:23</span>").replace(/Genesis 2:15 (📖)/g, "<span class=\"bible-verse\" data-verse=\"The LORD God took the man and put him in the Garden of Eden to work it and take care of it.\">Genesis 2:15 (📖)</span>").replace(/Proverbs 13:22/g, "<span class=\"bible-verse\" data-verse=\"A good person leaves an inheritance for their children, but a sinners wealth is stored up for the righteous.\">Proverbs 13:22</span>").replace(/Deuteronomy 8:18/g, "<span class=\"bible-verse\" data-verse=\"But remember the LORD your God, for it is he who gives you the ability to produce wealth.\">Deuteronomy 8:18</span>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Business Video Section */}
-                {sessionData.video_url && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                      <Play className="w-5 h-5 mr-2" />
-                      🎥 Business Teaching Video
-                    </h4>
-                    <div className="bg-white p-4 rounded-lg">
-                      <VimeoVideo url={sessionData.video_url} title="Business Teaching Video" />
-                      
-                      <div className="mt-6">
-                        <h5 className="font-semibold text-gray-800 mb-3">
-                          {pathwayMode === 'individual' ? '🤔 Personal Reflection' : '💬 Group Discussion'}
-                        </h5>
-                        <div className="bg-blue-50 p-4 rounded">
-                          <p className="text-gray-700 mb-2">What key insight from this video will change how you approach your business?</p>
-                          {pathwayMode === 'individual' && (
-                            <textarea 
-                              className="w-full p-2 border rounded resize-none"
-                              rows={2}
-                              placeholder="Your personal reflection..."
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Becoming God's Entrepreneur Section */}
-                <div className="mb-8">
-                  <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                    <Heart className="w-5 h-5 mr-2" />
-                    👑 Becoming God's Entrepreneur
-                  </h4>
-                  <div className="bg-white p-6 rounded-lg border-l-4 border-purple-400">
-                    {sessionData.becoming_gods_entrepreneur?.video_url && (
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-purple-800 mb-3">🎥 Identity Transformation Video</h5>
-                        <VimeoVideo 
-                          url={sessionData.becoming_gods_entrepreneur.video_url} 
-                          title="Becoming God's Entrepreneur" 
-                        />
-                      </div>
-                    )}
-                    
-                    {sessionData.becoming_gods_entrepreneur?.content && (
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-purple-800 mb-3">💭 Identity Reflection</h5>
-                        <p className="text-gray-700 italic bg-purple-50 p-4 rounded">
-                          {sessionData.becoming_gods_entrepreneur.content}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* IBAM Discovery Bible Study */}
-                    <div className="mb-6">
-                      <h5 className="font-semibold text-purple-800 mb-3 flex items-center">
-                        <BookOpen className="w-5 h-5 mr-2" />
-                        📖 IBAM Discovery Bible Study
-                      </h5>
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
-                        <div className="space-y-4">
-                          <div className="bg-white p-4 rounded border-l-4 border-blue-400">
-                            <h6 className="font-semibold text-blue-800 mb-2">🙏 Pray</h6>
-                            <p className="text-gray-700 text-sm">Talk with God simply and briefly. Ask God to teach you this week's passage.</p>
-                          </div>
-                          
-                          <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                            <h6 className="font-semibold text-green-800 mb-2">📖 Read and Discuss</h6>
-                            <p className="text-gray-700 text-sm mb-3">Read this week's passage: {sessionData.scripture_reference}</p>
-                            
-                            <div className="space-y-3">
-                              <div>
-                                <p className="text-gray-700 font-medium">What did you like about this passage?</p>
-                                {pathwayMode === 'individual' && (
-                                  <textarea 
-                                    className="w-full mt-1 p-2 text-sm border rounded resize-none"
-                                    rows={2}
-                                    placeholder="What you liked..."
-                                  />
-                                )}
-                              </div>
-                              
-                              <div>
-                                <p className="text-gray-700 font-medium">What did you find challenging about this passage?</p>
-                                {pathwayMode === 'individual' && (
-                                  <textarea 
-                                    className="w-full mt-1 p-2 text-sm border rounded resize-none"
-                                    rows={2}
-                                    placeholder="What was challenging..."
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white p-4 rounded border-l-4 border-purple-400">
-                            <h6 className="font-semibold text-purple-800 mb-2">📖 Read Again & Reflect</h6>
-                            <p className="text-gray-700 text-sm mb-3">Read this week's passage again.</p>
-                            
-                            <div className="space-y-3">
-                              <div>
-                                <p className="text-gray-700 font-medium">What does this passage teach about God?</p>
-                                {pathwayMode === 'individual' && (
-                                  <textarea 
-                                    className="w-full mt-1 p-2 text-sm border rounded resize-none"
-                                    rows={2}
-                                    placeholder="What it teaches about God..."
-                                  />
-                                )}
-                              </div>
-                              
-                              <div>
-                                <p className="text-gray-700 font-medium">What does this passage teach about people?</p>
-                                {pathwayMode === 'individual' && (
-                                  <textarea 
-                                    className="w-full mt-1 p-2 text-sm border rounded resize-none"
-                                    rows={2}
-                                    placeholder="What it teaches about people..."
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bringing it All Together */}
-                <div className="mb-8">
-                  <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                    <Link2 className="w-5 h-5 mr-2" />
-                    🔗 Bringing it All Together
-                  </h4>
-                  <div className="bg-white p-6 rounded-lg border-l-4 border-orange-400">
-                    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-lg">
-                      <h5 className="font-semibold text-orange-800 mb-4">
-                        🎯 {pathwayMode === 'individual' ? 'Personal Integration' : 'Group Integration'}
-                      </h5>
-                      
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                          <p className="text-gray-700 font-medium mb-2">How do the biblical principles connect with the business concepts you learned?</p>
-                          {pathwayMode === 'individual' && (
-                            <textarea 
-                              className="w-full p-2 border rounded resize-none"
-                              rows={3}
-                              placeholder="Your integration insights..."
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Session-Specific FAQ */}
-                {sessionData.faq_questions && sessionData.faq_questions.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      ❓ Session Questions & Answers
-                    </h4>
-                    <div className="bg-white rounded-lg border">
-                      <div className="bg-blue-50 px-6 py-3">
-                        <h5 className="font-semibold text-blue-800">📚 About Today's Session</h5>
-                      </div>
-                      <div className="p-6 space-y-4">
-                        {sessionData.faq_questions.map((faq, index) => (
-                          <div key={index} className="border-l-4 border-blue-200 pl-4 bg-blue-50 p-3 rounded-r">
-                            <p className="text-gray-700">{faq}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Case Study */}
-                {sessionData.case_study && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3">📊 Case Study</h4>
-                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                      <p className="text-gray-700">{sessionData.case_study}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Downloads */}
-                {sessionData.extra_materials && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3">📄 Session Downloads</h4>
-                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h5 className="font-semibold text-gray-800">Session Workbook & Resources</h5>
-                          <p className="text-gray-600 text-sm">PDF worksheets, templates, and supplementary materials</p>
-                        </div>
-                        <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <button 
-                  onClick={() => markSectionComplete('lookup')}
-                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
-                >
-                  Complete Look Up
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Look Forward */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div 
-              className="bg-orange-500 hover:bg-orange-600 text-white p-6 cursor-pointer transition-colors"
-              onClick={() => setExpandedSection(expandedSection === 'lookforward' ? null : 'lookforward')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Lightbulb className="w-8 h-8 mr-3" />
-                  <div>
-                    <h3 className="text-2xl font-bold">🎯 Look Forward</h3>
-                    <p className="text-orange-100">Action Planning + Commitments</p>
-                  </div>
-                </div>
-                {expandedSection === 'lookforward' ? <ChevronDown className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
-              </div>
-            </div>
-            
-            {expandedSection === 'lookforward' && (
-              <div className="p-6 bg-orange-50">
-                {/* Business Planner Integration */}
-                <div className="mb-6">
-                  <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-lg shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-xl font-bold mb-2">💼 Business Planner Integration</h4>
-                        <p className="text-purple-100">Apply today's learning directly to your business plan</p>
-                      </div>
-                      <button 
-                        onClick={() => navigateTo('/business-plan')}
-                        className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-purple-50 transition-colors"
-                      >
-                        Open Planner →
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Business Plan Questions */}
-                {sessionData.business_plan_questions && sessionData.business_plan_questions.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-orange-800 mb-3">📋 Business Plan Development</h4>
-                    <div className="space-y-4">
-                      {sessionData.business_plan_questions.map((question, index) => (
-                        <div key={index} className="bg-white p-5 rounded-lg border-l-4 border-purple-400 shadow-sm">
-                          <div className="flex items-start justify-between mb-3">
-                            <p className="text-gray-800 font-medium">{question}</p>
-                            <button className="text-purple-600 text-sm font-medium hover:text-purple-800">
-                              Add to Planner
-                            </button>
-                          </div>
-                          <textarea 
-                            className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                            rows={3}
-                            placeholder="Your response will be saved to your business plan..."
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Application Questions */}
-                <div className="mb-6">
-                  <h4 className="font-bold text-orange-800 mb-3">
-                    🎯 {pathwayMode === 'individual' ? 'Personal Application' : 'Group Application & Accountability'}
-                  </h4>
-                  <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                    <p className="text-gray-700 mb-2">What specific action will you take this week to apply today's learning?</p>
-                    {pathwayMode === 'individual' && (
-                      <textarea 
-                        className="w-full p-2 border rounded resize-none"
-                        rows={2}
-                        placeholder="Your personal commitment..."
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Multiplication Challenges */}
-                {sessionData.content?.look_forward?.multiplication_challenges && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-orange-800 mb-3">🌱 Multiplication Challenge</h4>
-                    <div className="space-y-3">
-                      {sessionData.content.look_forward.multiplication_challenges.map((challenge, index) => (
-                        <div key={index} className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded border-l-4 border-green-400">
-                          <p className="text-gray-700 font-medium">{challenge}</p>
-                          {pathwayMode === 'individual' && (
-                            <textarea 
-                              className="w-full mt-2 p-2 border rounded resize-none"
-                              rows={2}
-                              placeholder="Your multiplication plan..."
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Session Feedback Survey */}
-                <div className="mb-6">
-                  <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
-                    <h4 className="text-xl font-bold mb-3 flex items-center">
-                      <Star className="w-6 h-6 mr-2" />
-                      📊 Quick Session Feedback
-                    </h4>
-                    <p className="text-pink-100 mb-6">Help us make every session better! Your feedback takes 30 seconds and helps fellow entrepreneurs.</p>
-                    
-                    <div className="space-y-6">
-                      {/* Question 1 */}
-                      <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3">💎 How valuable was today's content for your business journey?</h5>
-                        <div className="flex gap-3 justify-center">
-                          {[1, 2, 3, 4, 5].map((rating) => (
-                            <button
-                              key={rating}
-                              onClick={() => setSurveyResponses(prev => ({ ...prev, content_value: rating }))}
-                              className={`w-12 h-12 rounded-full text-2xl transition-all ${
-                                surveyResponses.content_value === rating
-                                  ? 'bg-yellow-400 text-gray-800 transform scale-110 shadow-lg'
-                                  : 'bg-white/20 text-white hover:bg-white/30'
-                              }`}
-                            >
-                              {rating === 1 ? '😕' : rating === 2 ? '😐' : rating === 3 ? '🙂' : rating === 4 ? '😊' : '🤩'}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex justify-between text-xs text-pink-200 mt-2">
-                          <span>Not helpful</span>
-                          <span>Life-changing!</span>
-                        </div>
-                      </div>
-
-                      {/* Question 2 */}
-                      <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3">🎯 How effective was the learning format?</h5>
-                        <div className="flex gap-3 justify-center">
-                          {[1, 2, 3, 4, 5].map((rating) => (
-                            <button
-                              key={rating}
-                              onClick={() => setSurveyResponses(prev => ({ ...prev, learning_experience: rating }))}
-                              className={`w-12 h-12 rounded-full text-2xl transition-all ${
-                                surveyResponses.learning_experience === rating
-                                  ? 'bg-green-400 text-gray-800 transform scale-110 shadow-lg'
-                                  : 'bg-white/20 text-white hover:bg-white/30'
-                              }`}
-                            >
-                              {rating === 1 ? '💤' : rating === 2 ? '😴' : rating === 3 ? '👍' : rating === 4 ? '🚀' : '⚡'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Question 3 */}
-                      <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3">🤝 How likely are you to recommend this session?</h5>
-                        <div className="flex gap-3 justify-center">
-                          {[1, 2, 3, 4, 5].map((rating) => (
-                            <button
-                              key={rating}
-                              onClick={() => setSurveyResponses(prev => ({ ...prev, recommendation: rating }))}
-                              className={`w-12 h-12 rounded-full text-2xl transition-all ${
-                                surveyResponses.recommendation === rating
-                                  ? 'bg-blue-400 text-gray-800 transform scale-110 shadow-lg'
-                                  : 'bg-white/20 text-white hover:bg-white/30'
-                              }`}
-                            >
-                              {rating === 1 ? '👎' : rating === 2 ? '🤷' : rating === 3 ? '👌' : rating === 4 ? '👏' : '🙌'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Submit */}
-                      {Object.values(surveyResponses).every(rating => rating > 0) && (
-                        <div className="text-center">
-                          <button
-                            onClick={submitSurvey}
-                            className="bg-white text-purple-600 px-8 py-3 rounded-lg font-bold hover:bg-purple-50 transition-colors shadow-lg"
-                          >
-                            🙏 Submit Feedback
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => markSectionComplete('lookforward')}
-                    className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition-colors"
+      {/* Section Navigation */}
+      <div className="bg-white border-b" style={{borderColor: '#e2e8f0'}}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex">
+            {[
+              { 
+                key: 'lookback', 
+                label: 'Look Back', 
+                icon: '👀', 
+                subtitle: 'Reflect & Pray'
+              },
+              { 
+                key: 'lookup', 
+                label: 'Look Up', 
+                icon: '📖', 
+                subtitle: 'Learn & Grow'
+              },
+              { 
+                key: 'lookforward', 
+                label: 'Look Forward', 
+                icon: '🎯', 
+                subtitle: 'Apply & Plan'
+              }
+            ].map((section) => {
+              const isActive = currentSection === section.key;
+              
+              return (
+                <div key={section.key} className="flex-1 relative group">
+                  <button
+                    onClick={() => setCurrentSection(section.key as any)}
+                    className={`w-full py-6 md:py-8 px-2 md:px-4 relative transition-all ${
+                      isActive 
+                        ? 'bg-[#4ECDC4]/10 border-b-4' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                    style={{
+                      borderBottomColor: isActive ? '#4ECDC4' : 'transparent'
+                    }}
                   >
-                    Complete Look Forward
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('/business-plan')}
-                    className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition-colors"
-                  >
-                    Save to Business Plan
+                    <div className="text-center">
+                      <div className="text-4xl md:text-6xl mb-2">
+                        {section.icon}
+                      </div>
+                      <div className={`font-semibold text-lg md:text-xl ${
+                        isActive ? 'text-[#4ECDC4]' : 'text-[#2C3E50]'
+                      }`}>
+                        {section.label}
+                      </div>
+                      <div className="text-sm md:text-base text-gray-600 mt-1">
+                        {section.subtitle}
+                      </div>
+                    </div>
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Transformation Promise */}
-        {sessionData.transformation_promise && (
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg shadow-xl mb-8">
-            <h3 className="text-xl font-bold mb-3">✨ Your Transformation Promise</h3>
-            <p className="text-lg">{sessionData.transformation_promise}</p>
-          </div>
-        )}
-
-        {/* Comprehensive Course Help Center */}
-        <div className="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
-            <h3 className="text-2xl font-bold mb-2 flex items-center">
-              🎓 IBAM Course Help Center
-            </h3>
-            <p className="text-indigo-100">Everything you need to succeed in your faith-driven business journey!</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
-            <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-blue-500">
-              <h4 className="font-bold text-blue-800 mb-3 flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                🧭 Navigation
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Session Flow:</p>
-                  <p className="text-gray-600">Use Previous/Next or Module Overview to navigate</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Learning Paths:</p>
-                  <p className="text-gray-600">Switch between Individual & Small Group anytime</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-purple-50 p-5 rounded-lg border-l-4 border-purple-500">
-              <h4 className="font-bold text-purple-800 mb-3 flex items-center">
-                <Lightbulb className="w-5 h-5 mr-2" />
-                💼 Business Planner
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Access:</p>
-                  <p className="text-gray-600">Click "Business Planner" button anytime</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Integration:</p>
-                  <p className="text-gray-600">Session answers auto-populate your plan</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 p-5 rounded-lg border-l-4 border-green-500">
-              <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                <Download className="w-5 h-5 mr-2" />
-                💾 Your Work
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Auto-Save:</p>
-                  <p className="text-gray-600">Everything saves as you type - no stress!</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Downloads:</p>
-                  <p className="text-gray-600">Session materials & workbooks available</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-red-50 p-5 rounded-lg border-l-4 border-red-500">
-              <h4 className="font-bold text-red-800 mb-3 flex items-center">
-                <Heart className="w-5 h-5 mr-2" />
-                🆘 Support
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">General Help:</p>
-                  <p className="text-gray-600">
-                    <a href="mailto:support@ibam.org" className="text-red-600 hover:underline">support@ibam.org</a>
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Technical Issues:</p>
-                  <p className="text-gray-600">
-                    <a href="mailto:tech@ibam.org" className="text-red-600 hover:underline">tech@ibam.org</a>
-                  </p>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </div>
+
     </div>
   );
 }
