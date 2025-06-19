@@ -650,6 +650,42 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
     <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
       <div 
   className="formatted-content"
+<style jsx>{`
+  .bible-verse {
+    position: relative;
+    color: #3498DB;
+    font-weight: bold;
+    cursor: help;
+    border-bottom: 1px dotted #3498DB;
+    transition: all 0.3s ease;
+  }
+  .bible-verse:hover { color: #2980B9; }
+  .bible-verse::after {
+    content: attr(data-verse);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2C3E50;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: normal;
+    width: 300px;
+    text-align: center;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .bible-verse:hover::after {
+    opacity: 1;
+    visibility: visible;
+  }
+`}</style>
   dangerouslySetInnerHTML={{
     __html: sessionData.content.written_curriculum.main_content
       // Main headings (# ) - Large blue
@@ -665,12 +701,12 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
       .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold; color: #2C3E50;">$1</strong>')
       
       // Bible verse hovers
-      .replace(/Genesis 1:1/g, '<span class="bible-verse" title="In the beginning God created the heavens and the earth." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 1:1</span>')
-      .replace(/Genesis 1:28/g, '<span class="bible-verse" title="God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 1:28</span>')
-      .replace(/Genesis 2:15/g, '<span class="bible-verse" title="The LORD God took the man and put him in the Garden of Eden to work it and take care of it." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Genesis 2:15</span>')
-      .replace(/Proverbs 13:22/g, '<span class="bible-verse" title="A good person leaves an inheritance for their children, but a sinner wealth is stored up for the righteous." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Proverbs 13:22</span>')
-      .replace(/Deuteronomy 8:18/g, '<span class="bible-verse" title="Remember the LORD your God, for it is he who gives you the ability to produce wealth." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Deuteronomy 8:18</span>')
-      .replace(/Colossians 3:23/g, '<span class="bible-verse" title="Whatever you do, work at it with all your heart, as working for the Lord, not for human masters." style="color: #3498DB; font-weight: bold; cursor: help; border-bottom: 1px dotted #3498DB;">Colossians 3:23</span>')
+      .replace(/Genesis 1:1/g, '<span class="bible-verse" data-verse="In the beginning God created the heavens and the earth.">Genesis 1:1</span>')
+      .replace(/Genesis 1:28/g, '<span class="bible-verse" data-verse="God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.">Genesis 1:28</span>')
+      .replace(/Genesis 2:15/g, '<span class="bible-verse" data-verse="The LORD God took the man and put him in the Garden of Eden to work it and take care of it.">Genesis 2:15</span>')
+      .replace(/Proverbs 13:22/g, '<span class="bible-verse" data-verse="A good person leaves an inheritance for their children, but a sinners wealth is stored up for the righteous.">Proverbs 13:22</span>')
+      .replace(/Deuteronomy 8:18/g, '<span class="bible-verse" data-verse="Remember the LORD your God, for it is he who gives you the ability to produce wealth.">Deuteronomy 8:18</span>')
+      .replace(/Colossians 3:23/g, '<span class="bible-verse" data-verse="Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.">Colossians 3:23</span>')
       
       // Paragraphs - BLACK text
       .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;">')
