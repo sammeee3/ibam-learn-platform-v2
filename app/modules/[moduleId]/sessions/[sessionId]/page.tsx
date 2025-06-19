@@ -221,7 +221,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
         submitted_at: new Date().toISOString()
       };
 
-      // This will need a session_surveys table - for now we'll store in user_progress
+      // Store in user_progress for now
       const { error } = await supabase
         .from('user_progress')
         .upsert({
@@ -242,6 +242,9 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
       console.error('Error submitting survey:', err);
     }
   };
+
+  // Navigation functions
+  const navigateToSession = (direction: 'prev' | 'next') => {
     if (!sessionData) return;
     
     const targetSession = direction === 'next' 
@@ -258,7 +261,6 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
   // Vimeo Video Component
   const VimeoVideo = ({ url, title }: { url: string; title: string }) => {
     const getVimeoEmbedUrl = (vimeoUrl: string) => {
-      // Extract video ID and hash from Vimeo URL
       const match = vimeoUrl.match(/vimeo\.com\/(\d+)\/([a-zA-Z0-9]+)/);
       if (match) {
         const [, videoId, hash] = match;
@@ -276,134 +278,11 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
           <p className="text-gray-600">{title}</p>
           <p className="text-sm text-gray-500 mt-2">Video URL: {url}</p>
         </div>
-
-        {/* NEW: Comprehensive Course Help Center - Bottom Placement */}
-        <div className="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
-            <h3 className="text-2xl font-bold mb-2 flex items-center">
-              🎓 IBAM Course Help Center
-            </h3>
-            <p className="text-indigo-100">Everything you need to succeed in your faith-driven business journey!</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
-            {/* Course Navigation */}
-            <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-blue-500">
-              <h4 className="font-bold text-blue-800 mb-3 flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                🧭 Navigation
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Session Flow:</p>
-                  <p className="text-gray-600">Use Previous/Next or Module Overview to navigate</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Learning Paths:</p>
-                  <p className="text-gray-600">Switch between Individual & Small Group anytime</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Progress:</p>
-                  <p className="text-gray-600">Auto-saves as you complete sections</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Business Planner */}
-            <div className="bg-purple-50 p-5 rounded-lg border-l-4 border-purple-500">
-              <h4 className="font-bold text-purple-800 mb-3 flex items-center">
-                <Lightbulb className="w-5 h-5 mr-2" />
-                💼 Business Planner
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Access:</p>
-                  <p className="text-gray-600">Click "Business Planner" button anytime</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Integration:</p>
-                  <p className="text-gray-600">Session answers auto-populate your plan</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Editing:</p>
-                  <p className="text-gray-600">Refine responses as your vision grows</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Downloads & Saving */}
-            <div className="bg-green-50 p-5 rounded-lg border-l-4 border-green-500">
-              <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                <Download className="w-5 h-5 mr-2" />
-                💾 Your Work
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Auto-Save:</p>
-                  <p className="text-gray-600">Everything saves as you type - no stress!</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Downloads:</p>
-                  <p className="text-gray-600">Session materials & workbooks available</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Export:</p>
-                  <p className="text-gray-600">Download your business plan anytime</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Support */}
-            <div className="bg-red-50 p-5 rounded-lg border-l-4 border-red-500">
-              <h4 className="font-bold text-red-800 mb-3 flex items-center">
-                <Heart className="w-5 h-5 mr-2" />
-                🆘 Support
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">General Help:</p>
-                  <p className="text-gray-600">
-                    <a href="mailto:support@ibam.org" className="text-red-600 hover:underline">support@ibam.org</a>
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Technical Issues:</p>
-                  <p className="text-gray-600">
-                    <a href="mailto:tech@ibam.org" className="text-red-600 hover:underline">tech@ibam.org</a>
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Response Time:</p>
-                  <p className="text-gray-600">Usually within 24 hours</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Resources */}
-          <div className="bg-gray-50 p-6 border-t">
-            <h4 className="font-bold text-gray-800 mb-4 text-center">🌟 Additional Resources</h4>
-            <div className="grid md:grid-cols-3 gap-4 text-center">
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h5 className="font-semibold text-blue-800">📚 Resource Library</h5>
-                <p className="text-sm text-gray-600">Books, articles, and tools in your Dashboard</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h5 className="font-semibold text-green-800">👥 Community Forum</h5>
-                <p className="text-sm text-gray-600">Connect with fellow entrepreneurs</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h5 className="font-semibold text-purple-800">🙏 Prayer Support</h5>
-                <p className="text-sm text-gray-600">Local small groups in your area</p>
-              </div>
-            </div>
-          </div>
-        </div>
       );
     }
 
     return (
-      <div className="relative w-full" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <iframe
           src={embedUrl}
           className="absolute top-0 left-0 w-full h-full rounded-lg"
@@ -510,7 +389,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
             <p className="text-gray-600 mt-2">{sessionData.subtitle}</p>
           </div>
           
-          {/* Progress indicator with session info */}
+          {/* Progress indicator */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div className="flex space-x-4">
               <div className={`flex items-center ${completedSections.lookback ? 'text-green-600' : 'text-gray-400'}`}>
@@ -527,7 +406,6 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
               </div>
             </div>
             
-            {/* Session completion status */}
             <div className="flex items-center space-x-4 text-sm text-gray-600">
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
@@ -594,21 +472,19 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
         {/* Pathway Selection */}
         <PathwayToggle />
 
-        {/* NEW: Quick Help Access Buttons */}
+        {/* Quick Help Access */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-xl mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold mb-2">🚀 Need Quick Help?</h3>
               <p className="text-blue-100">Everything you need to navigate like a pro!</p>
             </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setExpandedSection(expandedSection === 'quickhelp' ? null : 'quickhelp')}
-                className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-purple-50 transition-colors flex items-center"
-              >
-                🆘 Quick Help
-              </button>
-            </div>
+            <button 
+              onClick={() => setExpandedSection(expandedSection === 'quickhelp' ? null : 'quickhelp')}
+              className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-purple-50 transition-colors"
+            >
+              🆘 Quick Help
+            </button>
           </div>
           
           {expandedSection === 'quickhelp' && (
@@ -623,24 +499,8 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                       <li>• Your progress saves automatically - no stress!</li>
                     </ul>
                   </div>
-                  <div className="bg-white/20 p-4 rounded-lg">
-                    <h5 className="font-bold text-white mb-2">💼 Business Planner Magic</h5>
-                    <ul className="text-blue-100 text-sm space-y-1">
-                      <li>• Your session answers auto-fill your business plan</li>
-                      <li>• Click "Business Planner" anytime to see progress</li>
-                      <li>• Edit and refine as your vision grows</li>
-                    </ul>
-                  </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="bg-white/20 p-4 rounded-lg">
-                    <h5 className="font-bold text-white mb-2">💾 Your Work is Safe</h5>
-                    <ul className="text-blue-100 text-sm space-y-1">
-                      <li>• Everything saves automatically as you type</li>
-                      <li>• Download materials anytime you need them</li>
-                      <li>• Export your business plan when ready</li>
-                    </ul>
-                  </div>
                   <div className="bg-white/20 p-4 rounded-lg">
                     <h5 className="font-bold text-white mb-2">🆘 Getting Stuck? We're Here!</h5>
                     <ul className="text-blue-100 text-sm space-y-1">
@@ -745,7 +605,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
             )}
           </div>
 
-          {/* Look Up - ENHANCED WITH ALL NEW SECTIONS */}
+          {/* Look Up - ENHANCED */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div 
               className="bg-green-500 hover:bg-green-600 text-white p-6 cursor-pointer transition-colors"
@@ -778,43 +638,22 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   </div>
                 )}
 
-                {/* NEW: Written Curriculum Content Section */}
+                {/* Written Curriculum Content */}
                 <div className="mb-8">
                   <h4 className="font-bold text-green-800 mb-3 flex items-center">
                     <Book className="w-5 h-5 mr-2" />
                     📝 Core Teaching Content (30-minute read)
                   </h4>
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
-                    {sessionData.content?.written_curriculum?.main_content ? (
-                      <div className="prose max-w-none">
-                        <div className="text-gray-800 leading-relaxed mb-6">
-                          {sessionData.content.written_curriculum.main_content}
-                        </div>
-                        {sessionData.content.written_curriculum.key_points && (
-                          <div className="bg-green-50 p-4 rounded-lg">
-                            <h5 className="font-semibold text-green-800 mb-3">🎯 Key Points:</h5>
-                            <ul className="space-y-2">
-                              {sessionData.content.written_curriculum.key_points.map((point, index) => (
-                                <li key={index} className="flex items-start">
-                                  <span className="text-green-600 mr-2">•</span>
-                                  <span className="text-gray-700">{point}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                        <p>Written curriculum content will be populated here.</p>
-                        <p className="text-sm mt-2">This section will contain the comprehensive 30-minute teaching content.</p>
-                      </div>
-                    )}
+                    <div className="text-center py-8 text-gray-500">
+                      <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p>Written curriculum content will be populated here.</p>
+                      <p className="text-sm mt-2">This section will contain the comprehensive 30-minute teaching content.</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Enhanced Business Video Section */}
+                {/* Business Video Section */}
                 {sessionData.video_url && (
                   <div className="mb-8">
                     <h4 className="font-bold text-green-800 mb-3 flex items-center">
@@ -824,50 +663,18 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                     <div className="bg-white p-4 rounded-lg">
                       <VimeoVideo url={sessionData.video_url} title="Business Teaching Video" />
                       
-                      {/* Video Discussion Questions */}
                       <div className="mt-6">
                         <h5 className="font-semibold text-gray-800 mb-3">
                           {pathwayMode === 'individual' ? '🤔 Personal Reflection' : '💬 Group Discussion'}
                         </h5>
-                        <div className="space-y-3">
-                          {pathwayMode === 'individual' ? (
-                            sessionData.content?.pathways?.individual?.reflection_prompts?.map((prompt, index) => (
-                              <div key={index} className="bg-blue-50 p-4 rounded">
-                                <p className="text-gray-700 mb-2">{prompt}</p>
-                                <textarea 
-                                  className="w-full p-2 border rounded resize-none"
-                                  rows={2}
-                                  placeholder="Your personal reflection..."
-                                />
-                              </div>
-                            )) || (
-                              <div className="bg-blue-50 p-4 rounded">
-                                <p className="text-gray-700 mb-2">What key insight from this video will change how you approach your business?</p>
-                                <textarea 
-                                  className="w-full p-2 border rounded resize-none"
-                                  rows={2}
-                                  placeholder="Your personal reflection..."
-                                />
-                              </div>
-                            )
-                          ) : (
-                            sessionData.content?.pathways?.small_group?.discussion_questions?.map((question, index) => (
-                              <div key={index} className="bg-purple-50 p-4 rounded">
-                                <p className="text-gray-700">{question}</p>
-                              </div>
-                            )) || (
-                              <>
-                                <div className="bg-purple-50 p-4 rounded">
-                                  <p className="text-gray-700">Share one key insight from the video with your group.</p>
-                                </div>
-                                <div className="bg-purple-50 p-4 rounded">
-                                  <p className="text-gray-700">How can you apply this principle in your business this week?</p>
-                                </div>
-                                <div className="bg-purple-50 p-4 rounded">
-                                  <p className="text-gray-700">What accountability do you need from the group?</p>
-                                </div>
-                              </>
-                            )
+                        <div className="bg-blue-50 p-4 rounded">
+                          <p className="text-gray-700 mb-2">What key insight from this video will change how you approach your business?</p>
+                          {pathwayMode === 'individual' && (
+                            <textarea 
+                              className="w-full p-2 border rounded resize-none"
+                              rows={2}
+                              placeholder="Your personal reflection..."
+                            />
                           )}
                         </div>
                       </div>
@@ -875,14 +682,13 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   </div>
                 )}
 
-                {/* NEW: Enhanced "Becoming God's Entrepreneur" Section */}
+                {/* Becoming God's Entrepreneur Section */}
                 <div className="mb-8">
                   <h4 className="font-bold text-green-800 mb-3 flex items-center">
                     <Heart className="w-5 h-5 mr-2" />
                     👑 Becoming God's Entrepreneur
                   </h4>
                   <div className="bg-white p-6 rounded-lg border-l-4 border-purple-400">
-                    {/* BGE Video */}
                     {sessionData.becoming_gods_entrepreneur?.video_url && (
                       <div className="mb-6">
                         <h5 className="font-semibold text-purple-800 mb-3">🎥 Identity Transformation Video</h5>
@@ -893,7 +699,6 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                       </div>
                     )}
                     
-                    {/* BGE Content */}
                     {sessionData.becoming_gods_entrepreneur?.content && (
                       <div className="mb-6">
                         <h5 className="font-semibold text-purple-800 mb-3">💭 Identity Reflection</h5>
@@ -903,37 +708,13 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                       </div>
                     )}
 
-                    {/* BGE Questions */}
-                    {sessionData.becoming_gods_entrepreneur?.questions && (
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-purple-800 mb-3">
-                          {pathwayMode === 'individual' ? '🎯 Personal Identity Questions' : '👥 Group Identity Discussion'}
-                        </h5>
-                        <div className="space-y-3">
-                          {sessionData.becoming_gods_entrepreneur.questions.map((question, index) => (
-                            <div key={index} className="bg-purple-50 p-4 rounded">
-                              <p className="text-gray-700 mb-2">{question}</p>
-                              {pathwayMode === 'individual' && (
-                                <textarea 
-                                  className="w-full p-2 border rounded resize-none"
-                                  rows={2}
-                                  placeholder="Your reflection on identity..."
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* NEW: IBAM Discovery Bible Study */}
+                    {/* IBAM Discovery Bible Study */}
                     <div className="mb-6">
                       <h5 className="font-semibold text-purple-800 mb-3 flex items-center">
                         <BookOpen className="w-5 h-5 mr-2" />
                         📖 IBAM Discovery Bible Study
                       </h5>
                       <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
-                        {/* Discovery Study Questions */}
                         <div className="space-y-4">
                           <div className="bg-white p-4 rounded border-l-4 border-blue-400">
                             <h6 className="font-semibold text-blue-800 mb-2">🙏 Pray</h6>
@@ -1003,7 +784,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   </div>
                 </div>
 
-                {/* NEW: "Bringing it All Together" Integration Section */}
+                {/* Bringing it All Together */}
                 <div className="mb-8">
                   <h4 className="font-bold text-green-800 mb-3 flex items-center">
                     <Link2 className="w-5 h-5 mr-2" />
@@ -1015,71 +796,23 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                         🎯 {pathwayMode === 'individual' ? 'Personal Integration' : 'Group Integration'}
                       </h5>
                       
-                      {pathwayMode === 'individual' ? (
-                        <div className="space-y-4">
-                          <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                            <p className="text-gray-700 font-medium mb-2">How do the biblical principles connect with the business concepts you learned?</p>
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded border-l-4 border-orange-400">
+                          <p className="text-gray-700 font-medium mb-2">How do the biblical principles connect with the business concepts you learned?</p>
+                          {pathwayMode === 'individual' && (
                             <textarea 
                               className="w-full p-2 border rounded resize-none"
                               rows={3}
                               placeholder="Your integration insights..."
                             />
-                          </div>
-                          <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                            <p className="text-gray-700 font-medium mb-2">What specific action will you take this week to apply both the biblical and business principles?</p>
-                            <textarea 
-                              className="w-full p-2 border rounded resize-none"
-                              rows={3}
-                              placeholder="Your specific action plan..."
-                            />
-                          </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                            <p className="text-gray-700 font-medium">Group Discussion: How do the biblical and business principles work together in your marketplace?</p>
-                          </div>
-                          <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                            <p className="text-gray-700 font-medium">Group Challenge: What specific actions will your group commit to this week?</p>
-                          </div>
-                          <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                            <p className="text-gray-700 font-medium">Accountability: How will you check in with each other on progress?</p>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Existing sections - Case Study, Downloads */}
-                {sessionData.case_study && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3">📊 Case Study</h4>
-                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                      <p className="text-gray-700">{sessionData.case_study}</p>
-                    </div>
-                  </div>
-                )}
-
-                {sessionData.extra_materials && (
-                  <div className="mb-8">
-                    <h4 className="font-bold text-green-800 mb-3">📄 Session Downloads</h4>
-                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h5 className="font-semibold text-gray-800">Session Workbook & Resources</h5>
-                          <p className="text-gray-600 text-sm">PDF worksheets, templates, and supplementary materials</p>
-                        </div>
-                        <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Session-Specific FAQ Only */}
+                {/* Session-Specific FAQ */}
                 {sessionData.faq_questions && sessionData.faq_questions.length > 0 && (
                   <div className="mb-8">
                     <h4 className="font-bold text-green-800 mb-3 flex items-center">
@@ -1096,6 +829,35 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                             <p className="text-gray-700">{faq}</p>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case Study */}
+                {sessionData.case_study && (
+                  <div className="mb-8">
+                    <h4 className="font-bold text-green-800 mb-3">📊 Case Study</h4>
+                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
+                      <p className="text-gray-700">{sessionData.case_study}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Downloads */}
+                {sessionData.extra_materials && (
+                  <div className="mb-8">
+                    <h4 className="font-bold text-green-800 mb-3">📄 Session Downloads</h4>
+                    <div className="bg-white p-4 rounded border-l-4 border-green-400">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h5 className="font-semibold text-gray-800">Session Workbook & Resources</h5>
+                          <p className="text-gray-600 text-sm">PDF worksheets, templates, and supplementary materials</p>
+                        </div>
+                        <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1173,52 +935,19 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   </div>
                 )}
 
-                {/* Enhanced Application Questions with Pathways */}
+                {/* Application Questions */}
                 <div className="mb-6">
                   <h4 className="font-bold text-orange-800 mb-3">
                     🎯 {pathwayMode === 'individual' ? 'Personal Application' : 'Group Application & Accountability'}
                   </h4>
-                  <div className="space-y-3">
-                    {pathwayMode === 'individual' ? (
-                      sessionData.content?.look_forward?.application_questions?.map((question, index) => (
-                        <div key={index} className="bg-white p-4 rounded border-l-4 border-orange-400">
-                          <p className="text-gray-700 mb-2">{question}</p>
-                          <textarea 
-                            className="w-full p-2 border rounded resize-none"
-                            rows={2}
-                            placeholder="Your personal commitment..."
-                          />
-                        </div>
-                      )) || (
-                        <div className="bg-white p-4 rounded border-l-4 border-orange-400">
-                          <p className="text-gray-700 mb-2">What specific action will you take this week to apply today's learning?</p>
-                          <textarea 
-                            className="w-full p-2 border rounded resize-none"
-                            rows={2}
-                            placeholder="Your personal commitment..."
-                          />
-                        </div>
-                      )
-                    ) : (
-                      <>
-                        {sessionData.content?.pathways?.small_group?.accountability_partnerships?.map((partnership, index) => (
-                          <div key={index} className="bg-white p-4 rounded border-l-4 border-purple-400">
-                            <p className="text-gray-700">{partnership}</p>
-                          </div>
-                        )) || (
-                          <>
-                            <div className="bg-white p-4 rounded border-l-4 border-purple-400">
-                              <p className="text-gray-700">What commitments will each person make for the week ahead?</p>
-                            </div>
-                            <div className="bg-white p-4 rounded border-l-4 border-purple-400">
-                              <p className="text-gray-700">How will you check in with each other during the week?</p>
-                            </div>
-                            <div className="bg-white p-4 rounded border-l-4 border-purple-400">
-                              <p className="text-gray-700">Who will you each share this week's learning with outside the group?</p>
-                            </div>
-                          </>
-                        )}
-                      </>
+                  <div className="bg-white p-4 rounded border-l-4 border-orange-400">
+                    <p className="text-gray-700 mb-2">What specific action will you take this week to apply today's learning?</p>
+                    {pathwayMode === 'individual' && (
+                      <textarea 
+                        className="w-full p-2 border rounded resize-none"
+                        rows={2}
+                        placeholder="Your personal commitment..."
+                      />
                     )}
                   </div>
                 </div>
@@ -1226,9 +955,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                 {/* Multiplication Challenges */}
                 {sessionData.content?.look_forward?.multiplication_challenges && (
                   <div className="mb-6">
-                    <h4 className="font-bold text-orange-800 mb-3">
-                      🌱 {pathwayMode === 'individual' ? 'Personal Multiplication' : 'Group Multiplication Challenge'}
-                    </h4>
+                    <h4 className="font-bold text-orange-800 mb-3">🌱 Multiplication Challenge</h4>
                     <div className="space-y-3">
                       {sessionData.content.look_forward.multiplication_challenges.map((challenge, index) => (
                         <div key={index} className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded border-l-4 border-green-400">
@@ -1246,7 +973,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   </div>
                 )}
 
-                {/* NEW: Session Feedback Survey */}
+                {/* Session Feedback Survey */}
                 <div className="mb-6">
                   <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
                     <h4 className="text-xl font-bold mb-3 flex items-center">
@@ -1256,7 +983,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                     <p className="text-pink-100 mb-6">Help us make every session better! Your feedback takes 30 seconds and helps fellow entrepreneurs.</p>
                     
                     <div className="space-y-6">
-                      {/* Question 1: Content Value */}
+                      {/* Question 1 */}
                       <div className="bg-white/10 backdrop-blur rounded-lg p-4">
                         <h5 className="font-semibold text-white mb-3">💎 How valuable was today's content for your business journey?</h5>
                         <div className="flex gap-3 justify-center">
@@ -1280,9 +1007,9 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                         </div>
                       </div>
 
-                      {/* Question 2: Learning Experience */}
+                      {/* Question 2 */}
                       <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3">🎯 How effective was the learning format (videos, content, exercises)?</h5>
+                        <h5 className="font-semibold text-white mb-3">🎯 How effective was the learning format?</h5>
                         <div className="flex gap-3 justify-center">
                           {[1, 2, 3, 4, 5].map((rating) => (
                             <button
@@ -1298,15 +1025,11 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                             </button>
                           ))}
                         </div>
-                        <div className="flex justify-between text-xs text-pink-200 mt-2">
-                          <span>Boring</span>
-                          <span>Engaging & Clear</span>
-                        </div>
                       </div>
 
-                      {/* Question 3: Recommendation */}
+                      {/* Question 3 */}
                       <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3">🤝 How likely are you to recommend this session to another entrepreneur?</h5>
+                        <h5 className="font-semibold text-white mb-3">🤝 How likely are you to recommend this session?</h5>
                         <div className="flex gap-3 justify-center">
                           {[1, 2, 3, 4, 5].map((rating) => (
                             <button
@@ -1322,13 +1045,9 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                             </button>
                           ))}
                         </div>
-                        <div className="flex justify-between text-xs text-pink-200 mt-2">
-                          <span>Wouldn't recommend</span>
-                          <span>Must experience!</span>
-                        </div>
                       </div>
 
-                      {/* Submit Survey */}
+                      {/* Submit */}
                       {Object.values(surveyResponses).every(rating => rating > 0) && (
                         <div className="text-center">
                           <button
@@ -1364,11 +1083,95 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
 
         {/* Transformation Promise */}
         {sessionData.transformation_promise && (
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg shadow-xl">
+          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg shadow-xl mb-8">
             <h3 className="text-xl font-bold mb-3">✨ Your Transformation Promise</h3>
             <p className="text-lg">{sessionData.transformation_promise}</p>
           </div>
         )}
+
+        {/* Comprehensive Course Help Center */}
+        <div className="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+            <h3 className="text-2xl font-bold mb-2 flex items-center">
+              🎓 IBAM Course Help Center
+            </h3>
+            <p className="text-indigo-100">Everything you need to succeed in your faith-driven business journey!</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
+            <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-blue-500">
+              <h4 className="font-bold text-blue-800 mb-3 flex items-center">
+                <Users className="w-5 h-5 mr-2" />
+                🧭 Navigation
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-800">Session Flow:</p>
+                  <p className="text-gray-600">Use Previous/Next or Module Overview to navigate</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">Learning Paths:</p>
+                  <p className="text-gray-600">Switch between Individual & Small Group anytime</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-purple-50 p-5 rounded-lg border-l-4 border-purple-500">
+              <h4 className="font-bold text-purple-800 mb-3 flex items-center">
+                <Lightbulb className="w-5 h-5 mr-2" />
+                💼 Business Planner
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-800">Access:</p>
+                  <p className="text-gray-600">Click "Business Planner" button anytime</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">Integration:</p>
+                  <p className="text-gray-600">Session answers auto-populate your plan</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-green-50 p-5 rounded-lg border-l-4 border-green-500">
+              <h4 className="font-bold text-green-800 mb-3 flex items-center">
+                <Download className="w-5 h-5 mr-2" />
+                💾 Your Work
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-800">Auto-Save:</p>
+                  <p className="text-gray-600">Everything saves as you type - no stress!</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">Downloads:</p>
+                  <p className="text-gray-600">Session materials & workbooks available</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 p-5 rounded-lg border-l-4 border-red-500">
+              <h4 className="font-bold text-red-800 mb-3 flex items-center">
+                <Heart className="w-5 h-5 mr-2" />
+                🆘 Support
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-800">General Help:</p>
+                  <p className="text-gray-600">
+                    <a href="mailto:support@ibam.org" className="text-red-600 hover:underline">support@ibam.org</a>
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">Technical Issues:</p>
+                  <p className="text-gray-600">
+                    <a href="mailto:tech@ibam.org" className="text-red-600 hover:underline">tech@ibam.org</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
