@@ -296,7 +296,19 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
   };
 
   // Scripture hover component
-  const ScriptureReference = ({ reference }: { reference: string }) => (
+const ScriptureReference = ({ reference }: { reference: string }) => {
+  const scriptureTexts: { [key: string]: string } = {
+    "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
+    "Genesis 1:28": "And God blessed them. And God said to them, 'Be fruitful and multiply and fill the earth and subdue it.'",
+    "Colossians 3:23": "Whatever you do, work heartily, as for the Lord and not for men.",
+    "Genesis 2:15": "The LORD God took the man and put him in the Garden of Eden to work it and take care of it.",
+    "Proverbs 13:22": "A good person leaves an inheritance for their children's children.",
+    "Deuteronomy 8:18": "But remember the LORD your God, for it is he who gives you the ability to produce wealth."
+  };
+
+  const scriptureText = scriptureTexts[reference] || "Scripture text not available";
+
+  return (
     <span 
       className="relative inline-block cursor-pointer text-blue-600 font-semibold border-b border-dotted border-blue-400 hover:text-blue-800 transition-colors"
       onMouseEnter={() => setHoveredVerse(reference)}
@@ -305,10 +317,35 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
       {reference}
       {hoveredVerse === reference && (
         <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-w-sm">
-          <div className="text-sm font-bold text-blue-800 mb-2">{reference}</div>
-          <div className="text-sm text-gray-700 italic">
-            Scripture text will be loaded here from your scripture table
+          <div className="text-base font-bold text-blue-800 mb-2">{reference}</div>
+          <div className="text-base text-gray-700 italic">
+            {scriptureText}
           </div>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-200"></div>
+        </div>
+      )}
+    </span>
+  );
+};    <span 
+      className="relative inline-block cursor-pointer text-blue-600 font-semibold border-b border-dotted border-blue-400 hover:text-blue-800 transition-colors"
+      onMouseEnter={() => setHoveredVerse(reference)}
+      onMouseLeave={() => setHoveredVerse(null)}
+    >
+      {reference}
+      {hoveredVerse === reference && (
+        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-4 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-w-sm">
+<div className="text-base font-bold text-blue-800 mb-2">{reference}</div>
+          <div className="text-base text-gray-700 italic">x
+const scriptureTexts: { [key: string]: string } = {
+  "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
+  "Genesis 1:28": "And God blessed them. And God said to them, 'Be fruitful and multiply and fill the earth and subdue it.'",
+  "Colossians 3:23": "Whatever you do, work heartily, as for the Lord and not for men.",
+  "Genesis 2:15": "The LORD God took the man and put him in the Garden of Eden to work it and take care of it.",
+  "Proverbs 13:22": "A good person leaves an inheritance for their children's children.",
+  "Deuteronomy 8:18": "But remember the LORD your God, for it is he who gives you the ability to produce wealth."
+};
+
+const scriptureText = scriptureTexts[reference] || "Scripture text not available";          </div>
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-200"></div>
         </div>
       )}
@@ -685,7 +722,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
     z-index: 1001;
   }
 `}</style>
-                      <p><div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/Genesis 1:1/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title=\"In the beginning God created the heavens and the earth.\">Genesis 1:1</span>").replace(/Genesis 1:28/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.'>Genesis 1:28</span>").replace(/Colossians 3:23/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.'>Colossians 3:23</span>").replace(/Genesis 2:15 (📖)/g, "<span class=\"bible-verse\" data-verse=\"The LORD God took the man and put him in the Garden of Eden to work it and take care of it.\">Genesis 2:15 (📖)</span>").replace(/Proverbs 13:22/g, "<span class=\"bible-verse\" data-verse=\"A good person leaves an inheritance for their children, but a sinners wealth is stored up for the righteous.\">Proverbs 13:22</span>").replace(/Deuteronomy 8:18/g, "<span class=\"bible-verse\" data-verse=\"But remember the LORD your God, for it is he who gives you the ability to produce wealth.\">Deuteronomy 8:18</span>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
+                      <div dangerouslySetInnerHTML={{ __html: (sessionData?.content?.written_curriculum?.main_content || "Content loading...").replace(/^# (.*)$/gm, "<h1 style=\"font-size: 2.5rem; font-weight: bold; color: #3498DB; margin: 2rem 0 1rem 0;\">$1</h1>").replace(/^## (.*)$/gm, "<h2 style=\"font-size: 2rem; font-weight: bold; color: #2C3E50; margin: 1.5rem 0 1rem 0;\">$1</h2>").replace(/^### (.*)$/gm, "<h3 style=\"font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 1.2rem 0 0.8rem 0;\">$1</h3>").replace(/\*\*(.*?)\*\*/g, "<strong style=\"font-weight: bold; color: #2C3E50;\">$1</strong>").replace(/Genesis 1:1/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" title=\"In the beginning God created the heavens and the earth.\">Genesis 1:1</span>").replace(/Genesis 1:28/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='God blessed them and said to them, Be fruitful and increase in number; fill the earth and subdue it.'>Genesis 1:28</span>").replace(/Colossians 3:23/g, "<span style=\"color: #3498DB; font-weight: bold; border-bottom: 1px dotted #3498DB;\" data-verse='Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.'>Colossians 3:23</span>").replace(/Genesis 2:15 (📖)/g, "<span class=\"bible-verse\" data-verse=\"The LORD God took the man and put him in the Garden of Eden to work it and take care of it.\">Genesis 2:15 (📖)</span>").replace(/Proverbs 13:22/g, "<span class=\"bible-verse\" data-verse=\"A good person leaves an inheritance for their children, but a sinners wealth is stored up for the righteous.\">Proverbs 13:22</span>").replace(/Deuteronomy 8:18/g, "<span class=\"bible-verse\" data-verse=\"But remember the LORD your God, for it is he who gives you the ability to produce wealth.\">Deuteronomy 8:18</span>").replace(/\n\n/g, "</p><p style=\"margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem; color: #000000;\">") }} /></p>
                     </div>
                   </div>
                 </div>
