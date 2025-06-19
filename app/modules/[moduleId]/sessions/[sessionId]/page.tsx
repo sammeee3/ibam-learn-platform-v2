@@ -658,8 +658,7 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
                   <div className="bg-white p-6 rounded-lg border-l-4 border-green-400">
                     <div className="text-center py-8 text-gray-500">
                       <Book className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p>Written curriculum content will be populated here.</p>
-                      <p className="text-sm mt-2">This section will contain the comprehensive 30-minute teaching content.</p>
+                      <p>sessionData?.content?.written_curriculum?.main_content || "Content loading..."</p>
                     </div>
                   </div>
                 </div>
