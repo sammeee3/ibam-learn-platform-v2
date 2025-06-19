@@ -659,7 +659,13 @@ export default function EnhancedSessionPage({ params }: SessionPageProps) {
   <div className="py-8">
   {sessionData?.content?.written_curriculum?.main_content ? (
     <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
-      {sessionData.content.written_curriculum.main_content}
+      <div dangerouslySetInnerHTML={{
+  __html: sessionData.content.written_curriculum.main_content
+    .replace(/^# /gm, '<h1 style="font-size: 2.5rem; font-weight: bold; color: #2C3E50; margin: 2rem 0 1rem 0;">')
+    .replace(/^## /gm, '<h2 style="font-size: 2rem; font-weight: bold; color: #3498DB; margin: 1.5rem 0 1rem 0;">')
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold; color: #2C3E50;">$1</strong>')
+    .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; line-height: 1.7; font-size: 1.1rem;">')
+}} />
     </div>
   ) : (
     <div className="text-center text-gray-500">
